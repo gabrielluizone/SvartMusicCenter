@@ -15,6 +15,7 @@ message CustomList {
   message ListEntry {
     required string entryId = 1;
     required string entryTitle = 2;
+    optional string entrySubtitle = 3;
   }
 }
 

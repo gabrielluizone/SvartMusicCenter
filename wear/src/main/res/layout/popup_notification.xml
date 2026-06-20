@@ -15,8 +15,8 @@
         android:scaleY="0"
         android:visibility="gone"
         app:boxedEdges="all"
-        app:cardBackgroundColor="#FFFFFF"
-        app:cardCornerRadius="5dp"
+        app:cardBackgroundColor="@color/glass_surface_border"
+        app:cardCornerRadius="14dp"
         app:cardElevation="5dp">
 
         <FrameLayout

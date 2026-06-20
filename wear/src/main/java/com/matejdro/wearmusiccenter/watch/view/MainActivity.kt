@@ -7,16 +7,22 @@ import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Message
 import android.os.Vibrator
+import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.widget.ImageView
 import android.view.ViewConfiguration
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.addCallback
@@ -27,6 +33,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.palette.graphics.Palette
 import androidx.preference.PreferenceManager
 import androidx.wear.ambient.AmbientModeSupport
 import androidx.wear.widget.drawer.WearableDrawerLayout
@@ -36,6 +43,7 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.wearable.input.RotaryEncoderHelper
 import com.matejdro.wearmusiccenter.R
 import com.matejdro.wearmusiccenter.common.CommPaths
+import com.matejdro.wearmusiccenter.common.CustomLists
 import com.matejdro.wearmusiccenter.common.MiscPreferences
 import com.matejdro.wearmusiccenter.common.ScreenQuadrant
 import com.matejdro.wearmusiccenter.common.buttonconfig.ButtonInfo
@@ -60,6 +68,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.lang.ref.WeakReference
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 @AndroidEntryPoint
@@ -71,11 +80,20 @@ class MainActivity : WearCompanionWatchActivity(),
         private const val MESSAGE_HIDE_VOLUME = 10
         private const val MESSAGE_UPDATE_CLOCK = 11
         private const val MESSAGE_DISMISS_NOTIFICATION = 12
+        private const val MESSAGE_HIDE_QUICK_ACTIONS = 13
 
         private const val VOLUME_BAR_TIMEOUT = 1000L
+        private const val QUICK_ACTIONS_TIMEOUT = 5000L
+        private const val OVERLAY_FADE_OUT_MS = 150L
+        private const val OVERLAY_FADE_IN_MS = 80L
+        private const val BLUR_RADIUS_PX = 35f
+        private const val MIN_LEGACY_BLUR_DIMENSION_PX = 16
+        private const val AMBIENT_ALBUM_ART_ALPHA = 0.55f
     }
 
-    private lateinit var timeFormat: java.text.DateFormat
+    // Always 24h, regardless of system locale/setting - a stray "AM"/"PM" suffix on an ambient
+    // watch face just adds clutter without adding information.
+    private val timeFormat = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
     private lateinit var binding: ActivityMainBinding
     private lateinit var drawerContentContainer: View
     private lateinit var actionsMenuFragment: ActionsMenuFragment
@@ -85,6 +103,14 @@ class MainActivity : WearCompanionWatchActivity(),
     private val handler = TimeoutsHandler(WeakReference(this))
 
     private var notificationDismissDeadline: Long = Long.MAX_VALUE
+    private var dimAlbumArt: Boolean = false
+    private var lastKnownDurationMs: Long = 0L
+    private var latestAlbumArt: Bitmap? = null
+    private var currentAccentColor: Int = 0
+    private var shuffleEnabled: Boolean = false
+    private var repeatMode: Int = 0
+
+    private val defaultSeekBarColor by lazy { getColor(R.color.theme_accent) }
 
     private lateinit var preferences: SharedPreferences
 
@@ -116,11 +142,88 @@ class MainActivity : WearCompanionWatchActivity(),
         peekContainer.layoutParams = params
 
         binding.fourWayTouch.listener = this
+        binding.seekBar.onSeekPreview = { fraction -> showSeekOverlay(fraction) }
+        binding.seekBar.onSeekFinished = { fraction ->
+            viewModel.seekTo(fraction)
+            hideOverlay()
+        }
+        binding.volumeBar.onVolumeChanged = { fraction ->
+            viewModel.updateVolume(fraction)
+            showVolumeBar()
+        }
+        binding.seekBar.excludedTouchViews = listOf(
+                binding.iconTop,
+                binding.iconBottom,
+                binding.iconLeft,
+                binding.iconRight
+        )
+
+        val centerTapGestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            // Without this, the detector's default onDown() (false) would make onTouchEvent()
+            // return false for ACTION_DOWN, so the view never sees the rest of the gesture -
+            // the touch would fall through to FourWayTouchLayout underneath instead.
+            override fun onDown(e: MotionEvent): Boolean = true
+
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                buzz()
+                viewModel.togglePlayPause()
+                return true
+            }
+
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                buzz()
+                if (isQuickActionsPanelShowing()) {
+                    hideOverlay()
+                } else {
+                    showQuickActionsPanel()
+                }
+                return true
+            }
+        })
+        binding.centerTapZone.setOnTouchListener { _, event -> centerTapGestureDetector.onTouchEvent(event) }
+
+        binding.overlayBlurImage.setOnClickListener {
+            if (isQuickActionsPanelShowing()) {
+                hideOverlay()
+            }
+        }
+
+        binding.quickActionLike.setOnTouchListener(quickActionPressFeedback)
+        binding.quickActionShuffle.setOnTouchListener(quickActionPressFeedback)
+        binding.quickActionRepeat.setOnTouchListener(quickActionPressFeedback)
+
+        binding.quickActionLike.setOnClickListener {
+            buzz()
+            viewModel.sendQuickAction("like")
+        }
+        binding.quickActionShuffle.setOnClickListener {
+            buzz()
+            viewModel.sendQuickAction("shuffle")
+        }
+        binding.quickActionRepeat.setOnClickListener {
+            buzz()
+            viewModel.sendQuickAction("repeat")
+        }
+        binding.quickActionUpNext.setOnClickListener {
+            buzz()
+            hideOverlay()
+            // Same call the working, separately-configured "open queue" button uses - unlike
+            // openDefaultListInDrawer(), this isn't gated behind the swipe-up-specific preference,
+            // so Up Next always opens the real queue regardless of that setting.
+            viewModel.openPlaybackQueue()
+            actionsMenuFragment.refreshMenu(
+                    ActionsMenuFragment.MenuType.Custom(CustomListWithBitmaps(-1, "", emptyList()))
+            )
+            binding.actionDrawer.controller.openDrawer()
+        }
+
+        // Title's floor (22sp) is kept comfortably above artist's ceiling (16sp) so the title
+        // stays visually dominant even when a long title has to shrink to fit two lines.
+        binding.textArtist.enableSmartWordSizing(maxSizeSp = 16f, minSizeSp = 9f)
+        binding.textTitle.enableSmartWordSizing(maxSizeSp = 46f, minSizeSp = 25f)
 
         binding.drawerLayout.setDrawerStateCallback(drawerStateCallback)
         binding.notificationPopup.clickableFrame.setOnClickListener { onNotificationTapped() }
-
-        timeFormat = android.text.format.DateFormat.getTimeFormat(this)
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
         ambientController = AmbientModeSupport.attach(this)
@@ -136,6 +239,7 @@ class MainActivity : WearCompanionWatchActivity(),
         viewModel.closeApp.observe(this, closeAppListener)
         viewModel.notification.observe(this, notificationObserver)
         viewModel.customList.observe(this, customListListener)
+        viewModel.playbackPosition.observe(this, playbackPositionObserver)
 
 
         stemButtonsManager = StemButtonsManager(WatchInfoSender.getAvailableButtonsOnWatch(this), stemButtonListener, lifecycleScope)
@@ -212,14 +316,21 @@ class MainActivity : WearCompanionWatchActivity(),
 
         if (it.status == Resource.Status.SUCCESS && it.data != null) {
             if ((it.data as MusicState).playing) {
+                // Restores the dynamic (palette-extracted) color after a stopped/error message
+                // may have forced it to plain white below.
+                binding.textArtist.setTextColor(currentAccentColor)
                 binding.textArtist.text = it.data?.artist
             } else {
-                binding.textArtist.text = getString(R.string.playback_stopped)
+                setStatusMessageOnArtistLine(getString(R.string.playback_stopped))
             }
 
             binding.textTitle.text = it.data?.title
+
+            shuffleEnabled = it.data?.shuffleEnabled == true
+            repeatMode = it.data?.repeatMode ?: 0
+            updateQuickActionButtonStates()
         } else if (it.status == Resource.Status.ERROR) {
-            binding.textArtist.text = getString(R.string.error)
+            setStatusMessageOnArtistLine(getString(R.string.error))
             binding.textTitle.text = it.message
 
             val errorData = it.errorData
@@ -236,7 +347,116 @@ class MainActivity : WearCompanionWatchActivity(),
     }
 
     private val albumArtObserver = Observer<Bitmap?> {
+        latestAlbumArt = it
         binding.albumArt.setImageBitmap(it)
+        applyBlurredAlbumArt(it)
+
+        if (it == null) {
+            applyAccentColor(defaultSeekBarColor)
+            return@Observer
+        }
+
+        Palette.from(it).generate { palette ->
+            // Try increasingly muted/neutral swatches before giving up - vibrant swatches
+            // require saturated colors, so black & white / grayscale album art (which has
+            // none) would otherwise always fall through to the default accent.
+            val color = palette?.let { p ->
+                listOf(
+                        p.getVibrantSwatch(),
+                        p.getMutedSwatch(),
+                        p.getLightVibrantSwatch(),
+                        p.getDarkVibrantSwatch(),
+                        p.getLightMutedSwatch(),
+                        p.getDarkMutedSwatch(),
+                        p.dominantSwatch
+                ).firstNotNullOfOrNull { swatch -> swatch?.rgb }
+            } ?: defaultSeekBarColor
+
+            applyAccentColor(color)
+        }
+    }
+
+    private fun applyAccentColor(color: Int) {
+        currentAccentColor = color
+        binding.seekBar.progressColor = color
+        binding.volumeBar.progressColor = color
+        binding.textArtist.setTextColor(color)
+    }
+
+    /**
+     * "Playback Stopped"/"Error" reuse the artist line, but they're status messages, not an
+     * artist name - they should always read in plain white, never the dynamic accent color.
+     */
+    private fun setStatusMessageOnArtistLine(message: String) {
+        binding.textArtist.setTextColor(getColor(android.R.color.white))
+        binding.textArtist.text = message
+    }
+
+    /**
+     * Shows a blurred copy of the current album art behind the volume/seek rings.
+     *
+     * On API 31+ this is a real GPU Gaussian blur via [android.graphics.RenderEffect] - sharp,
+     * cheap, no quality loss. Older watches fall back to [createBlurredBitmapLegacy], a software
+     * approximation.
+     */
+    private fun applyBlurredAlbumArt(source: Bitmap?) {
+        if (source == null) {
+            binding.overlayBlurImage.setImageBitmap(null)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                binding.overlayBlurImage.setRenderEffect(null)
+            }
+            return
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            binding.overlayBlurImage.setImageBitmap(source)
+            binding.overlayBlurImage.setRenderEffect(
+                    RenderEffect.createBlurEffect(BLUR_RADIUS_PX, BLUR_RADIUS_PX, Shader.TileMode.CLAMP)
+            )
+        } else {
+            binding.overlayBlurImage.setImageBitmap(createBlurredBitmapLegacy(source))
+        }
+    }
+
+    /**
+     * Approximates a blur without RenderEffect by halving the bitmap's size repeatedly (each
+     * halving step is naturally box-filtered by the bilinear downscale) before scaling back up
+     * in one go - a single aggressive downscale jump looks blocky/pixelated instead, since
+     * bilinear interpolation between too few source pixels can't approximate a smooth blur.
+     */
+    /** Blurs (or un-blurs) the main album art view itself - used only for ambient mode. */
+    private fun setAmbientAlbumArtBlur(enabled: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            binding.albumArt.setRenderEffect(
+                    if (enabled) {
+                        RenderEffect.createBlurEffect(BLUR_RADIUS_PX, BLUR_RADIUS_PX, Shader.TileMode.CLAMP)
+                    } else {
+                        null
+                    }
+            )
+        } else {
+            val source = latestAlbumArt
+            binding.albumArt.setImageBitmap(
+                    if (enabled && source != null) createBlurredBitmapLegacy(source) else source
+            )
+        }
+    }
+
+    private fun createBlurredBitmapLegacy(source: Bitmap): Bitmap {
+        var current = source
+        while (current.width > MIN_LEGACY_BLUR_DIMENSION_PX && current.height > MIN_LEGACY_BLUR_DIMENSION_PX) {
+            val next = Bitmap.createScaledBitmap(current, current.width / 2, current.height / 2, true)
+            if (current !== source) {
+                current.recycle()
+            }
+            current = next
+        }
+
+        val result = Bitmap.createScaledBitmap(current, source.width, source.height, true)
+        if (current !== source) {
+            current.recycle()
+        }
+        return result
     }
 
     private val buttonConfigObserver = Observer<WatchActionConfigProvider?> { config ->
@@ -302,12 +522,14 @@ class MainActivity : WearCompanionWatchActivity(),
             }
         }
 
-        val dimAlbumArt = Preferences.getBoolean(
+        dimAlbumArt = Preferences.getBoolean(
             preferences,
             MiscPreferences.DIM_ALBUM_ART
         )
 
-        binding.albumArt.alpha = if (dimAlbumArt) 0.333f else 1f
+        if (!ambientController.isAmbient) {
+            binding.albumArtScrim.visibility = if (dimAlbumArt) View.VISIBLE else View.INVISIBLE
+        }
     }
 
     private val notificationObserver = Observer<Notification?> {
@@ -326,6 +548,32 @@ class MainActivity : WearCompanionWatchActivity(),
 
     private val phoneVolumeListener = Observer<Float> {
         binding.volumeBar.volume = it
+    }
+
+    private val playbackPositionObserver = Observer<PlaybackPosition?> { position ->
+        if (position == null || position.durationMs <= 0) {
+            binding.seekBar.seekable = false
+            binding.textPlaybackTime.visibility = View.GONE
+            return@Observer
+        }
+
+        lastKnownDurationMs = position.durationMs
+        binding.seekBar.seekable = position.seekable
+        binding.seekBar.progress = position.positionMs.toFloat() / position.durationMs
+
+        binding.textPlaybackTime.visibility = View.VISIBLE
+        binding.textPlaybackTime.text = getString(
+                R.string.playback_time_format,
+                formatPlaybackTime(position.positionMs),
+                formatPlaybackTime(position.durationMs)
+        )
+    }
+
+    private fun formatPlaybackTime(timeMs: Long): String {
+        val totalSeconds = timeMs / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return String.format("%d:%02d", minutes, seconds)
     }
 
     private val volumeBarPopupListener = Observer<Unit?> {
@@ -353,6 +601,15 @@ class MainActivity : WearCompanionWatchActivity(),
         if (it == null) {
             return@Observer
         }
+
+        updateUpNextPreview(it)
+
+        // The quick-actions panel only asked for this to populate its "Up Next" preview text -
+        // it hasn't asked to see the full list, so don't yank the user into the drawer for it.
+        if (isQuickActionsPanelShowing()) {
+            return@Observer
+        }
+
         val lastListDisplayed = Preferences.getString(
                 preferences,
                 MiscPreferences.LAST_MENU_DISPLAYED
@@ -443,17 +700,41 @@ class MainActivity : WearCompanionWatchActivity(),
                     binding.iconLeft.visibility = View.GONE
                     binding.iconRight.visibility = View.GONE
 
-                    binding.albumArt.visibility = View.GONE
+                    binding.albumArt.alpha = AMBIENT_ALBUM_ART_ALPHA
+                    setAmbientAlbumArtBlur(true)
+                    binding.albumArtScrim.visibility = View.GONE
                     binding.volumeBar.visibility = View.GONE
+                    binding.seekBar.visibility = View.GONE
+                    binding.overlayBlurImage.visibility = View.GONE
+                    binding.overlayDim.visibility = View.GONE
+                    binding.textVolumePercent.visibility = View.GONE
+                    binding.textSeekTime.visibility = View.GONE
+                    binding.volumeIconTop.visibility = View.GONE
+                    binding.volumeIconBottom.visibility = View.GONE
+                    binding.quickActionsPanel.visibility = View.GONE
                     binding.loadingIndicator.visibility = View.GONE
+
+                    // A continuously scrolling marquee would be both a burn-in risk and a
+                    // pointless battery drain on an always-on display - freeze it in place.
+                    binding.textArtist.setMarqueePaused(true)
+                    binding.textTitle.setMarqueePaused(true)
+
+                    // The system only calls onUpdateAmbient roughly once a minute, so a
+                    // playback position display would just look frozen/stale here. The
+                    // always-visible ambientClock above already covers "what time is it".
+                    binding.textPlaybackTime.visibility = View.GONE
+
+                    viewModel.setContinuousPositionTicking(false)
 
                     binding.root.background = ColorDrawable(Color.BLACK)
 
                     binding.notificationPopup.backgroundImage.visibility = View.GONE
                     binding.notificationPopup.solidBackground.background = ColorDrawable(Color.BLACK)
 
-                    binding.textArtist.displayTextOutline = true
+                    // Artist stays plain bold (no outline effect) - only the title mimics the
+                    // stock look of an outlined, "etched" headline.
                     binding.textTitle.displayTextOutline = true
+                    binding.textPlaybackTime.displayTextOutline = true
 
                     binding.actionDrawer.controller.closeDrawer()
                 }
@@ -481,7 +762,22 @@ class MainActivity : WearCompanionWatchActivity(),
                     binding.iconLeft.visibility = View.VISIBLE
                     binding.iconRight.visibility = View.VISIBLE
 
-                    binding.albumArt.visibility = View.VISIBLE
+                    binding.albumArt.alpha = 1f
+                    setAmbientAlbumArtBlur(false)
+                    binding.albumArtScrim.visibility = if (dimAlbumArt) View.VISIBLE else View.INVISIBLE
+                    binding.seekBar.visibility = View.VISIBLE
+                    binding.seekBar.alpha = 1f
+                    binding.volumeBar.visibility = View.GONE
+                    binding.volumeBar.alpha = 1f
+                    binding.overlayBlurImage.visibility = View.GONE
+                    binding.overlayDim.visibility = View.GONE
+                    binding.textVolumePercent.visibility = View.GONE
+                    binding.textSeekTime.visibility = View.GONE
+
+                    binding.textArtist.setMarqueePaused(false)
+                    binding.textTitle.setMarqueePaused(false)
+
+                    viewModel.setContinuousPositionTicking(true)
 
                     binding.root.background = null
 
@@ -502,11 +798,13 @@ class MainActivity : WearCompanionWatchActivity(),
                         rotatingInputDisabledUntil = System.currentTimeMillis() + crownDisableTime
                     }
 
-                    binding.textArtist.displayTextOutline = false
                     binding.textTitle.displayTextOutline = false
+                    binding.textPlaybackTime.displayTextOutline = false
 
-                    binding.root.translationX = 0f
-                    binding.root.translationY = 0f
+                    // onUpdateAmbient() offsets drawerLayout (not root) for burn-in protection -
+                    // resetting the wrong view here left it permanently shifted after ambient.
+                    binding.drawerLayout.translationX = 0f
+                    binding.drawerLayout.translationY = 0f
                 }
 
             }
@@ -550,9 +848,9 @@ class MainActivity : WearCompanionWatchActivity(),
             val multipler =
                     Preferences.getInt(preferences, MiscPreferences.ROTATING_CROWN_SENSITIVITY) / 100f
 
-            showVolumeBar()
             binding.volumeBar.incrementVolume(delta * 0.0025f * multipler)
             viewModel.updateVolume(binding.volumeBar.volume)
+            showVolumeBar()
 
 
             return true
@@ -630,11 +928,178 @@ class MainActivity : WearCompanionWatchActivity(),
         }
     }
 
+    /**
+     * Fades in the full-screen acrylic scrim that backs both the volume and seek overlays - it
+     * sits below them in the layout but above everything else, so showing it alone is enough to
+     * visually hide the rest of the screen without touching every other view's visibility.
+     */
+    private fun showOverlay() {
+        if (binding.overlayBlurImage.visibility != View.VISIBLE) {
+            binding.overlayBlurImage.alpha = 0f
+            binding.overlayBlurImage.visibility = View.VISIBLE
+            binding.overlayBlurImage.animate().cancel()
+            binding.overlayBlurImage.animate().alpha(1f).setDuration(OVERLAY_FADE_IN_MS).start()
+
+            binding.overlayDim.alpha = 0f
+            binding.overlayDim.visibility = View.VISIBLE
+            binding.overlayDim.animate().cancel()
+            binding.overlayDim.animate().alpha(1f).setDuration(OVERLAY_FADE_IN_MS).start()
+        }
+    }
+
+    private fun hideOverlay() {
+        binding.overlayBlurImage.animate().cancel()
+        binding.overlayBlurImage.animate()
+                .alpha(0f)
+                .setDuration(OVERLAY_FADE_OUT_MS)
+                .withEndAction { binding.overlayBlurImage.visibility = View.GONE }
+                .start()
+
+        binding.overlayDim.animate().cancel()
+        binding.overlayDim.animate()
+                .alpha(0f)
+                .setDuration(OVERLAY_FADE_OUT_MS)
+                .withEndAction { binding.overlayDim.visibility = View.GONE }
+                .start()
+
+        binding.volumeBar.animate().cancel()
+        binding.volumeBar.animate()
+                .alpha(0f)
+                .setDuration(OVERLAY_FADE_OUT_MS)
+                .withEndAction { binding.volumeBar.visibility = View.GONE }
+                .start()
+
+        binding.seekBar.animate().cancel()
+        binding.seekBar.animate().alpha(1f).setDuration(OVERLAY_FADE_OUT_MS).start()
+
+        binding.textVolumePercent.visibility = View.GONE
+        binding.textSeekTime.visibility = View.GONE
+        binding.volumeIconTop.visibility = View.GONE
+        binding.volumeIconBottom.visibility = View.GONE
+        binding.quickActionsPanel.visibility = View.GONE
+
+        handler.removeMessages(MESSAGE_HIDE_VOLUME)
+        handler.removeMessages(MESSAGE_HIDE_QUICK_ACTIONS)
+    }
+
+    /** Opened by double-tapping center_tap_zone - like/shuffle/repeat shortcuts plus a way into
+     *  the queue, on top of the same blur/dim scrim the volume and seek previews use. */
+    private fun showQuickActionsPanel() {
+        showOverlay()
+
+        binding.seekBar.animate().cancel()
+        binding.seekBar.animate().alpha(0f).setDuration(OVERLAY_FADE_IN_MS).start()
+
+        binding.textVolumePercent.visibility = View.GONE
+        binding.textSeekTime.visibility = View.GONE
+        binding.quickActionsPanel.visibility = View.VISIBLE
+
+        binding.quickActionPanelTitle.text = binding.textTitle.text
+        binding.quickActionPanelArtist.text = binding.textArtist.text
+        binding.quickActionPanelArtist.visibility =
+                if (binding.quickActionPanelArtist.text.isNullOrEmpty()) View.GONE else View.VISIBLE
+
+        updateQuickActionButtonStates()
+
+        // Show whatever was cached from a previous fetch immediately, then ask the phone for a
+        // fresh queue snapshot in the background - customListListener() will update the preview
+        // text in place without yanking the user into the full drawer while this panel is open.
+        viewModel.customList.value?.let { updateUpNextPreview(it) }
+        viewModel.openPlaybackQueue()
+
+        handler.removeMessages(MESSAGE_HIDE_QUICK_ACTIONS)
+        handler.sendEmptyMessageDelayed(MESSAGE_HIDE_QUICK_ACTIONS, QUICK_ACTIONS_TIMEOUT)
+    }
+
+    private fun isQuickActionsPanelShowing() = binding.quickActionsPanel.visibility == View.VISIBLE
+
+    private fun accentCircleDrawable(): GradientDrawable = GradientDrawable().apply {
+        shape = GradientDrawable.OVAL
+        setColor(currentAccentColor)
+    }
+
+    private fun setQuickActionButtonActive(view: ImageView, active: Boolean) {
+        view.background = if (active) {
+            accentCircleDrawable()
+        } else {
+            AppCompatResources.getDrawable(this, R.drawable.glass_circle_background)
+        }
+    }
+
+    /** Reflects confirmed shuffle/repeat state (from the phone) on the two buttons that have a
+     *  real persisted on/off state. There is no generic cross-app API to know whether the
+     *  current track is "liked", so the like button only gets transient press feedback. */
+    private fun updateQuickActionButtonStates() {
+        setQuickActionButtonActive(binding.quickActionShuffle, shuffleEnabled)
+        setQuickActionButtonActive(binding.quickActionRepeat, repeatMode != 0)
+    }
+
+    private val quickActionPressFeedback = View.OnTouchListener { v, event ->
+        val imageView = v as ImageView
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> imageView.background = accentCircleDrawable()
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> when (imageView) {
+                binding.quickActionShuffle -> setQuickActionButtonActive(imageView, shuffleEnabled)
+                binding.quickActionRepeat -> setQuickActionButtonActive(imageView, repeatMode != 0)
+                else -> setQuickActionButtonActive(imageView, false)
+            }
+        }
+        false
+    }
+
+    private fun updateUpNextPreview(data: CustomListWithBitmaps) {
+        // History (the fallback shown when the playing app exposes no real queue) is backward
+        // looking - there's no "next" track to preview in that case.
+        val nextTrack = if (data.listId == CustomLists.PLAYLIST) {
+            data.items.firstOrNull()?.listItem?.entryTitle
+        } else {
+            null
+        }
+
+        binding.quickActionUpNextTrack.apply {
+            if (nextTrack.isNullOrEmpty()) {
+                visibility = View.GONE
+            } else {
+                visibility = View.VISIBLE
+                text = nextTrack
+            }
+        }
+    }
+
     private fun showVolumeBar() {
-        binding.volumeBar.visibility = View.VISIBLE
+        showOverlay()
+
+        if (binding.volumeBar.visibility != View.VISIBLE) {
+            binding.volumeBar.alpha = 0f
+            binding.volumeBar.visibility = View.VISIBLE
+            binding.volumeBar.animate().cancel()
+            binding.volumeBar.animate().alpha(1f).setDuration(OVERLAY_FADE_OUT_MS).start()
+        }
+
+        // The two rings share the same accent color and would otherwise both be visible at
+        // once now that they're drawn on top of the blur overlay - only one should show at a time.
+        binding.seekBar.animate().cancel()
+        binding.seekBar.animate().alpha(0f).setDuration(OVERLAY_FADE_IN_MS).start()
+
+        binding.textSeekTime.visibility = View.GONE
+        binding.textVolumePercent.visibility = View.VISIBLE
+        binding.textVolumePercent.text = getString(
+                R.string.volume_percent_format,
+                (binding.volumeBar.volume * 100).roundToInt()
+        )
+        binding.volumeIconTop.visibility = View.VISIBLE
+        binding.volumeIconBottom.visibility = View.VISIBLE
 
         handler.removeMessages(MESSAGE_HIDE_VOLUME)
         handler.sendEmptyMessageDelayed(MESSAGE_HIDE_VOLUME, VOLUME_BAR_TIMEOUT)
+    }
+
+    private fun showSeekOverlay(fraction: Float) {
+        showOverlay()
+
+        binding.textVolumePercent.visibility = View.GONE
+        binding.textSeekTime.visibility = View.VISIBLE
+        binding.textSeekTime.text = formatPlaybackTime((fraction * lastKnownDurationMs).toLong())
     }
 
     fun buzz() {
@@ -677,7 +1142,7 @@ class MainActivity : WearCompanionWatchActivity(),
         override fun handleMessage(msg: Message) {
             when (msg.what) {
                 MESSAGE_HIDE_VOLUME -> {
-                    activity.get()?.binding?.volumeBar?.visibility = View.GONE
+                    activity.get()?.hideOverlay()
                 }
                 MESSAGE_UPDATE_CLOCK -> {
                     removeMessages(MESSAGE_UPDATE_CLOCK)
@@ -697,6 +1162,9 @@ class MainActivity : WearCompanionWatchActivity(),
                 }
                 MESSAGE_DISMISS_NOTIFICATION -> {
                     activity.get()?.hideNotification()
+                }
+                MESSAGE_HIDE_QUICK_ACTIONS -> {
+                    activity.get()?.hideOverlay()
                 }
                 else -> super.handleMessage(msg)
             }

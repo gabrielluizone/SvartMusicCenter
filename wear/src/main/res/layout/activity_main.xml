@@ -17,9 +17,14 @@
             android:id="@+id/album_art"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:alpha="0.333"
             android:scaleType="centerCrop"
             tools:ignore="ContentDescription" />
+
+        <View
+            android:id="@+id/album_art_scrim"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/album_art_scrim" />
 
         <androidx.wear.widget.BoxInsetLayout
             android:layout_width="match_parent"
@@ -29,46 +34,54 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:gravity="center_vertical"
                 android:orientation="vertical"
                 app:boxedEdges="all">
 
                 <com.matejdro.wearmusiccenter.watch.view.OutlineTextView
                     android:id="@+id/text_artist"
                     android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:gravity="center"
+                    android:includeFontPadding="false"
                     android:maxLength="30"
-                    android:textColor="@color/white"
-                    app:autoSizeStepGranularity="1sp"
-                    app:autoSizeTextType="uniform"
+                    android:maxLines="2"
+                    android:textColor="@color/theme_accent"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
                     tools:text="Artist" />
 
                 <com.matejdro.wearmusiccenter.watch.view.OutlineTextView
                     android:id="@+id/text_title"
                     android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="2"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
                     android:ellipsize="end"
                     android:gravity="center"
-                    android:maxLength="40"
+                    android:includeFontPadding="false"
+                    android:maxLines="2"
                     android:textColor="@color/white"
-                    android:textSize="48sp"
+                    android:textSize="40sp"
                     android:textStyle="bold"
-                    app:autoSizeStepGranularity="1sp"
-                    app:autoSizeTextType="uniform"
                     tools:text="Title" />
+
+                <com.matejdro.wearmusiccenter.watch.view.OutlineTextView
+                    android:id="@+id/text_playback_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:visibility="gone"
+                    tools:text="1:23 / 3:45"
+                    tools:visibility="visible" />
 
             </LinearLayout>
 
         </androidx.wear.widget.BoxInsetLayout>
-
-        <com.matejdro.wearmusiccenter.watch.view.CircularVolumeBar
-            android:id="@+id/volume_bar"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
 
         <com.matejdro.wearmusiccenter.common.view.FourWayTouchLayout
             android:id="@+id/four_way_touch"
@@ -121,14 +134,255 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal|top"
+                android:fontFamily="@font/google_sans"
                 android:paddingTop="5sp"
-                android:textColor="@color/white"
+                android:textColor="@color/ambient_clock_color"
                 android:textSize="15sp"
                 android:visibility="gone" />
 
             <requestFocus />
 
         </com.matejdro.wearmusiccenter.common.view.FourWayTouchLayout>
+
+        <!-- Tapping the middle of the screen toggles play/pause directly, regardless of how
+             the four quadrants are configured - sits above FourWayTouchLayout but is small
+             enough to leave the quadrants reachable everywhere outside its bounds. No visual
+             feedback on purpose (haptic buzz already confirms the tap). -->
+        <View
+            android:id="@+id/center_tap_zone"
+            android:layout_width="@dimen/center_tap_zone_size"
+            android:layout_height="@dimen/center_tap_zone_size"
+            android:layout_gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            tools:ignore="KeyboardInaccessibleWidget" />
+
+        <!-- Full-screen acrylic-style blurred album art, shown behind the volume/seek rings so
+             everything else on screen reads as hidden while the user is mid-adjustment - no
+             color filter on the image itself, just a heavily blurred copy of the current album
+             art (falls back to plain black via the background when there's no art to blur).
+             Drawn (and so must stay ordered in this file) *before* seek_bar/volume_bar so those
+             rings remain visible on top of it instead of being covered. Absorbs stray touches so
+             they don't fall through to center_tap_zone/icons underneath. -->
+        <ImageView
+            android:id="@+id/overlay_blur_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/black"
+            android:clickable="true"
+            android:focusable="true"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            tools:ignore="ContentDescription,KeyboardInaccessibleWidget" />
+
+        <!-- Faint extra darkening on top of the blur, just enough to keep the white text legible
+             without looking like a flat color filter. -->
+        <View
+            android:id="@+id/overlay_dim"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/overlay_dim_color"
+            android:visibility="gone" />
+
+        <com.matejdro.wearmusiccenter.watch.view.CircularProgressSeekBar
+            android:id="@+id/seek_bar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.matejdro.wearmusiccenter.watch.view.CircularVolumeBar
+            android:id="@+id/volume_bar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/volume_icon_top"
+            android:layout_width="@dimen/music_screen_icon_size"
+            android:layout_height="@dimen/music_screen_icon_size"
+            android:layout_gravity="center_horizontal|top"
+            android:layout_marginTop="@dimen/music_screen_icon_offset"
+            android:src="@drawable/volume_icon_up_outline"
+            android:visibility="gone"
+            tools:ignore="ContentDescription" />
+
+        <ImageView
+            android:id="@+id/volume_icon_bottom"
+            android:layout_width="@dimen/music_screen_icon_size"
+            android:layout_height="@dimen/music_screen_icon_size"
+            android:layout_gravity="center_horizontal|bottom"
+            android:layout_marginBottom="@dimen/music_screen_icon_offset"
+            android:src="@drawable/volume_icon_down_outline"
+            android:visibility="gone"
+            tools:ignore="ContentDescription" />
+
+        <com.matejdro.wearmusiccenter.watch.view.OutlineTextView
+            android:id="@+id/text_volume_percent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:includeFontPadding="false"
+            android:textColor="@color/white"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:text="65%"
+            tools:visibility="visible" />
+
+        <com.matejdro.wearmusiccenter.watch.view.OutlineTextView
+            android:id="@+id/text_seek_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:includeFontPadding="false"
+            android:textColor="@color/white"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:text="1:45"
+            tools:visibility="visible" />
+
+        <!-- Quick-actions panel: like/shuffle/repeat + a shortcut into the queue, opened by
+             double-tapping center_tap_zone (single tap there still toggles play/pause). Sits on
+             top of the same blur/dim overlay used by the volume and seek previews. -->
+        <LinearLayout
+            android:id="@+id/quick_actions_panel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="22dp"
+            android:layout_marginEnd="22dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.matejdro.wearmusiccenter.watch.view.OutlineTextView
+                android:id="@+id/quick_action_panel_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                tools:text="Title" />
+
+            <com.matejdro.wearmusiccenter.watch.view.OutlineTextView
+                android:id="@+id/quick_action_panel_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:textColor="@color/theme_accent"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="Artist" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/quick_action_like"
+                    android:layout_width="@dimen/quick_action_button_size"
+                    android:layout_height="@dimen/quick_action_button_size"
+                    android:layout_marginEnd="10dp"
+                    android:background="@drawable/glass_circle_background"
+                    android:clickable="true"
+                    android:contentDescription="@string/quick_action_like"
+                    android:focusable="true"
+                    android:padding="13dp"
+                    android:src="@drawable/action_like_outline" />
+
+                <ImageView
+                    android:id="@+id/quick_action_shuffle"
+                    android:layout_width="@dimen/quick_action_button_size"
+                    android:layout_height="@dimen/quick_action_button_size"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@drawable/glass_circle_background"
+                    android:clickable="true"
+                    android:contentDescription="@string/quick_action_shuffle"
+                    android:focusable="true"
+                    android:padding="13dp"
+                    android:src="@drawable/action_shuffle" />
+
+                <ImageView
+                    android:id="@+id/quick_action_repeat"
+                    android:layout_width="@dimen/quick_action_button_size"
+                    android:layout_height="@dimen/quick_action_button_size"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/glass_circle_background"
+                    android:clickable="true"
+                    android:contentDescription="@string/quick_action_repeat"
+                    android:focusable="true"
+                    android:padding="13dp"
+                    android:src="@drawable/action_repeat" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/quick_action_up_next"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/queue_pill_background"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="8dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/action_open_playlist"
+                    tools:ignore="ContentDescription" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/google_sans"
+                        android:text="@string/quick_action_up_next"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/quick_action_up_next_track"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/google_sans"
+                        android:maxLines="1"
+                        android:textColor="@color/glass_surface_subtitle_text"
+                        android:textSize="12sp"
+                        android:visibility="gone"
+                        tools:text="Next track name"
+                        tools:visibility="visible" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
 
         <ProgressBar
             android:id="@+id/loading_indicator"

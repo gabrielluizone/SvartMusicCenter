@@ -9,6 +9,9 @@
     <string name="action_skip_next">Skip next</string>
     <string name="action_skip_seconds">Skip %1$d seconds</string>
     <string name="action_reverse_seconds">Reverse for %1$d seconds</string>
+    <string name="action_like">Like</string>
+    <string name="action_shuffle">Shuffle</string>
+    <string name="action_repeat">Repeat</string>
     <string name="group_playback_controls">Playback controls</string>
     <string name="pick_action">Pick action</string>
     <string name="action_volume_up">Increase volume</string>

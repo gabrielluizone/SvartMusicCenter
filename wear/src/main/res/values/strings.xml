@@ -11,4 +11,10 @@
     <string name="back_button">Back</string>
     <string name="turn_bezel_cw">Turn bezel CW</string>
     <string name="turn_bezel_ccw">Turn bezel CCW</string>
+    <string name="playback_time_format">%1$s / %2$s</string>
+    <string name="volume_percent_format">%1$d%%</string>
+    <string name="quick_action_like">Like</string>
+    <string name="quick_action_shuffle">Shuffle</string>
+    <string name="quick_action_repeat">Repeat</string>
+    <string name="quick_action_up_next">Up Next</string>
 </resources>

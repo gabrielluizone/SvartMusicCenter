@@ -13,5 +13,12 @@ message MusicState {
   optional int32 time = 4;
   optional float volume = 5;
   optional bool error = 6 [default = false];
+  optional int64 positionMs = 7;
+  optional int64 durationMs = 8;
+  optional float playbackSpeed = 9 [default = 1.0];
+  optional int64 positionUpdateTime = 10;
+  optional bool seekable = 11;
+  optional bool shuffleEnabled = 12 [default = false];
+  optional int32 repeatMode = 13 [default = 0]; // 0=off, 1=all, 2=one
 }
 

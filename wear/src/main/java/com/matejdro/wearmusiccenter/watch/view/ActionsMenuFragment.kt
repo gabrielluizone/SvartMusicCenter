@@ -14,6 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
@@ -23,6 +24,7 @@ import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
 import com.google.android.wearable.input.RotaryEncoderHelper
 import com.matejdro.wearmusiccenter.R
+import com.matejdro.wearmusiccenter.common.CustomLists
 import com.matejdro.wearmusiccenter.common.MiscPreferences
 import com.matejdro.wearmusiccenter.watch.communication.CustomListWithBitmaps
 import com.matejdro.wearmusiccenter.watch.communication.WatchInfoSender
@@ -171,6 +173,9 @@ class ActionsMenuFragment : Fragment() {
     private fun executeAction(index: Int) {
         val customList = customMenuItems
         if (customList != null) {
+            if (customList.listId == CustomLists.HISTORY) {
+                return
+            }
             viewmodel.executeItemFromCustomMenu(
                     customList.listId,
                     customList.items.elementAt(index).listItem.entryId
@@ -191,17 +196,33 @@ class ActionsMenuFragment : Fragment() {
             if (customMenuItems != null) {
                 val customItem = customMenuItems.items[position]
 
-                holder.icon.setImageBitmap(customItem.icon)
+                // Matches the stock Wear OS queue look: plain text rows (title + artist), no
+                // per-entry album art thumbnail, pill-shaped background instead of the regular
+                // action list's glass card.
+                holder.icon.visibility = View.GONE
+                holder.itemView.background = AppCompatResources.getDrawable(requireContext(), R.drawable.queue_pill_background)
                 holder.title.text = customItem.listItem.entryTitle
 
-                val clickListener = if (alwaysPickCenter) null else holder
+                val subtitle = customItem.listItem.entrySubtitle
+                holder.subtitle.visibility = if (subtitle.isNullOrEmpty()) View.GONE else View.VISIBLE
+                holder.subtitle.text = subtitle
+
+                // History entries (the fallback shown when the playing app, e.g. YouTube Music,
+                // doesn't expose a real skippable queue) are informational only - there is no
+                // queue position to jump back to, so making them look tappable would just look
+                // broken when nothing happens after tapping one.
+                val isInformationalOnly = customMenuItems.listId == CustomLists.HISTORY
+                val clickListener = if (alwaysPickCenter || isInformationalOnly) null else holder
                 holder.itemView.setOnClickListener(clickListener)
-                holder.itemView.isClickable = !alwaysPickCenter
+                holder.itemView.isClickable = !alwaysPickCenter && !isInformationalOnly
             } else {
                 val configItem = menuItems[position]
 
+                holder.icon.visibility = View.VISIBLE
                 holder.icon.setImageDrawable(configItem.icon)
+                holder.itemView.background = AppCompatResources.getDrawable(requireContext(), R.drawable.glass_card_background)
                 holder.title.text = configItem.title
+                holder.subtitle.visibility = View.GONE
 
                 val clickListener = if (alwaysPickCenter) null else holder
                 holder.itemView.setOnClickListener(clickListener)
@@ -218,6 +239,7 @@ class ActionsMenuFragment : Fragment() {
     inner class MenuItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
         val icon: ImageView = itemView.findViewById(R.id.icon)
         val title: TextView = itemView.findViewById(R.id.text)
+        val subtitle: TextView = itemView.findViewById(R.id.text_subtitle)
 
         init {
             itemView.tag = this
@@ -248,6 +270,16 @@ class ActionsMenuFragment : Fragment() {
         }
 
         private fun finishChildrenLayout() {
+            // Custom lists (queue/history) are flat, fully-opaque modern rows - the dimming/
+            // scaling below was designed for the old single-line icon rows and looks dated
+            // against the new pill-shaped, two-line rows.
+            if (customMenuItems != null) {
+                for (childIndex in 0 until childCount) {
+                    getChildAt(childIndex)?.alpha = 1f
+                }
+                return
+            }
+
             for (childIndex in 0 until childCount) {
                 val child = getChildAt(childIndex)
                 val holder = child!!.tag as MenuItemViewHolder
@@ -287,7 +319,15 @@ class ActionsMenuFragment : Fragment() {
 
         private val childLayoutCallback = object : CurvingLayoutCallback(context) {
             override fun onLayoutFinished(child: View, parent: RecyclerView?) {
-                super.onLayoutFinished(child, parent)
+                if (customMenuItems != null) {
+                    // Flat rows for queue/history lists - the curvature below is what makes the
+                    // list look like it's bending around a circle while scrolling.
+                    child.translationX = 0f
+                    child.scaleX = 1f
+                    child.scaleY = 1f
+                } else {
+                    super.onLayoutFinished(child, parent)
+                }
 
                 // Figure out % progress from top to bottom
                 val centerOffset = child.height.toFloat() / 2.0f / recycler.height.toFloat()

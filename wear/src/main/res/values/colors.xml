@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="music_screen_volume_bar_foreground_color">#BBE8EAF6</color>
-    <color name="music_screen_volume_bar_background_color">#BB3F51B5</color>
+    <!-- Wear-only theme accent, overrides the shared (orange) common.accent for this module -->
+    <color name="theme_accent">#4F6DAB</color>
+
+    <color name="music_screen_volume_bar_foreground_color">#4F6DAB</color>
+    <color name="music_screen_volume_bar_background_color">#33FFFFFF</color>
+
+    <color name="ambient_clock_color">#99FFFFFF</color>
+
+    <!-- Weak dark wash over the blurred album art behind the volume/seek overlays - enough to
+         keep white text legible without hiding the blur underneath. -->
+    <color name="overlay_dim_color">#4D000000</color>
+
+    <!-- Dark "acrylic" glass surfaces, used by glass_card_background and friends -->
+    <color name="glass_surface_fill">#B3161619</color>
+    <color name="glass_surface_border">#33FFFFFF</color>
+    <color name="glass_surface_highlight">#14FFFFFF</color>
+    <color name="glass_surface_subtitle_text">#B3FFFFFF</color>
+    <color name="album_art_scrim_top">#00000000</color>
+    <color name="album_art_scrim_bottom">#CC000000</color>
 </resources>

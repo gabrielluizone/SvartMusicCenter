@@ -19,7 +19,10 @@ class PlaybackActionList : PhoneAction {
                 SkipToPrevAction(context),
                 SkipToNextAction(context),
                 SkipThirtySecondsAction(context),
-                ReverseThirtySecondsAction(context)
+                ReverseThirtySecondsAction(context),
+                LikeAction(context),
+                ShuffleAction(context),
+                RepeatAction(context)
         ))
     }
 

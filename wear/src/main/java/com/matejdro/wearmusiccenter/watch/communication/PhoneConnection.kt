@@ -78,6 +78,9 @@ class PhoneConnection @Inject constructor(@ApplicationContext private val contex
     private var sendingVolume = false
     private var nextVolume = -1f
 
+    private var sendingSeek = false
+    private var nextSeekPositionMs = -1L
+
     private var running = AtomicBoolean(false)
 
     init {
@@ -181,6 +184,45 @@ class PhoneConnection @Inject constructor(@ApplicationContext private val contex
                 }
             }
         }
+    }
+
+    fun sendSeek(positionMs: Long) {
+        scope?.launchWithErrorHandling(context, musicState) {
+            nextSeekPositionMs = -1L
+
+            if (sendingSeek) {
+                nextSeekPositionMs = positionMs
+                return@launchWithErrorHandling
+            }
+
+            try {
+                sendingSeek = true
+
+                messageClient.sendMessageToNearestClient(
+                        nodeClient,
+                        CommPaths.MESSAGE_SEEK_TO,
+                        ByteBuffer.allocate(8).putLong(positionMs).array()
+                )
+            } finally {
+                sendingSeek = false
+                if (nextSeekPositionMs >= 0) {
+                    sendSeek(nextSeekPositionMs)
+                }
+            }
+        }
+    }
+
+    suspend fun togglePlayPause() {
+        messageClient.sendMessageToNearestClient(nodeClient, CommPaths.MESSAGE_TOGGLE_PLAY_PAUSE)
+    }
+
+    /** [name] is one of "like"/"shuffle"/"repeat" - see MusicService.onMessageReceived on the phone. */
+    suspend fun sendQuickAction(name: String) {
+        messageClient.sendMessageToNearestClient(
+                nodeClient,
+                CommPaths.MESSAGE_QUICK_ACTION,
+                name.toByteArray(Charsets.UTF_8)
+        )
     }
 
     suspend fun executeButtonAction(buttonInfo: ButtonInfo) {

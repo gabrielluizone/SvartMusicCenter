@@ -4,16 +4,13 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.os.PersistableBundle
 import androidx.appcompat.content.res.AppCompatResources
-import com.google.android.gms.wearable.Asset
 import com.google.android.gms.wearable.PutDataRequest
 import com.google.android.gms.wearable.Wearable
 import com.matejdro.wearmusiccenter.R
 import com.matejdro.wearmusiccenter.common.CommPaths
 import com.matejdro.wearmusiccenter.common.CustomLists
-import com.matejdro.wearmusiccenter.config.buttons.ConfigConstants
 import com.matejdro.wearmusiccenter.music.MusicService
 import com.matejdro.wearmusiccenter.proto.CustomList
-import com.matejdro.wearutils.miscutils.BitmapUtils
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -27,53 +24,45 @@ class OpenPlaylistAction : SelectableAction {
 
     class Handler @Inject constructor(private val service: MusicService) : ActionHandler<OpenPlaylistAction> {
         override suspend fun handleAction(action: OpenPlaylistAction) {
-            // TODO take density of Watch's display into account
-            val targetIconSize = (ConfigConstants.BUTTON_ICON_SIZE_DP)
-
             val playlist = service.currentMediaController?.queue?.take(20)
             val putDataRequest = PutDataRequest.create(CommPaths.DATA_CUSTOM_LIST)
 
-            val protoList = if (playlist != null) {
-                playlist.mapIndexed { index, queueItem ->
-                    var icon = queueItem.description.iconBitmap
-                            ?: queueItem.description.iconUri?.let {
-                                BitmapUtils.getBitmap(BitmapUtils.getDrawableFromUri(service, it))
-                            }
-
-                    icon = BitmapUtils.shrinkPreservingRatio(
-                            icon,
-                            targetIconSize,
-                            targetIconSize,
-                            true
-                    )
-
-
-                    val iconData = BitmapUtils.serialize(icon)
-                    if (iconData != null) {
-                        putDataRequest.putAsset(index.toString(), Asset.createFromBytes(iconData))
-                    } else {
-                        putDataRequest.removeAsset(index.toString())
-                    }
-
+            // No per-entry album art thumbnails - the watch UI shows a plain text list (title +
+            // artist), matching the stock Wear OS queue look instead of our old icon-row style.
+            val listId: String
+            val protoList = if (playlist != null && playlist.isNotEmpty()) {
+                listId = CustomLists.PLAYLIST
+                playlist.map { queueItem ->
                     CustomList.ListEntry.newBuilder()
                             .setEntryId(queueItem.queueId.toString())
                             .setEntryTitle(queueItem.description.title?.toString() ?: "")
+                            .setEntrySubtitle(queueItem.description.subtitle?.toString() ?: "")
+                            .build()
+                }
+            } else if (service.recentTrackHistory.isNotEmpty()) {
+                // The playing app doesn't expose a live queue (common on Android 10+) - fall
+                // back to a locally tracked list of recently played tracks instead.
+                listId = CustomLists.HISTORY
+                service.recentTrackHistory.mapIndexed { index, entry ->
+                    CustomList.ListEntry.newBuilder()
+                            .setEntryId(index.toString())
+                            .setEntryTitle(entry.title)
+                            .setEntrySubtitle(entry.artist)
                             .build()
                 }
             } else {
-                putDataRequest.removeAsset("0")
+                listId = CustomLists.PLAYLIST
                 listOf(
                         CustomList.ListEntry.newBuilder()
                                 .setEntryId(CustomLists.SPECIAL_ITEM_ERROR)
                                 .setEntryTitle(service.getString(R.string.error_playlist_not_supported))
                                 .build()
                 )
-
             }
 
             val protoData = CustomList.newBuilder()
                     .addAllActions(protoList)
-                    .setListId(CustomLists.PLAYLIST)
+                    .setListId(listId)
                     .setListTimestamp(System.currentTimeMillis())
                     .build()
 

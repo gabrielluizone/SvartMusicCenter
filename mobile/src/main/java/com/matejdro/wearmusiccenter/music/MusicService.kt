@@ -14,6 +14,10 @@ import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.media.MediaMetadata
 import android.media.session.MediaController
+import android.media.session.PlaybackState
+import android.support.v4.media.session.MediaControllerCompat
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -21,6 +25,7 @@ import android.os.Looper
 import android.os.Message
 import android.preference.PreferenceManager
 import android.provider.Settings
+import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.LifecycleService
@@ -36,6 +41,9 @@ import com.matejdro.wearmusiccenter.R
 import com.matejdro.wearmusiccenter.actions.ActionHandler
 import com.matejdro.wearmusiccenter.actions.OpenPlaylistAction
 import com.matejdro.wearmusiccenter.actions.PhoneAction
+import com.matejdro.wearmusiccenter.actions.playback.LikeAction
+import com.matejdro.wearmusiccenter.actions.playback.RepeatAction
+import com.matejdro.wearmusiccenter.actions.playback.ShuffleAction
 import com.matejdro.wearmusiccenter.common.CommPaths
 import com.matejdro.wearmusiccenter.common.CustomLists
 import com.matejdro.wearmusiccenter.common.MiscPreferences
@@ -65,6 +73,8 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import com.matejdro.common.R as commonR
 
+data class TrackHistoryEntry(val artist: String, val title: String)
+
 class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener {
     companion object {
         const val ACTION_START_FROM_WATCH = "START_FROM_WATCH"
@@ -72,6 +82,8 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
 
         private const val MESSAGE_STOP_SELF = 0
         private val ACK_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(3)
+        private const val SEEK_DETECTION_THRESHOLD_MS = 1500L
+        private const val MAX_TRACK_HISTORY_SIZE = 20
 
         private const val STOP_SELF_PENDING_INTENT_REQUEST_CODE = 333
         private const val ACTION_STOP_SELF = "STOP_SELF"
@@ -111,8 +123,15 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
     private var ackTimeoutHandler = AckTimeoutHandler(WeakReference(this))
 
     private var previousMusicState: MusicState? = null
+    private var previousAlbumArt: Bitmap? = null
     var currentMediaController: MediaController? = null
     private var startedFromWatch = false
+
+    private var lastTrackArtist = ""
+    private var lastTrackTitle = ""
+
+    /** Most recently played tracks, newest first. Used as a fallback when [MediaController.getQueue] is unavailable. */
+    val recentTrackHistory = ArrayDeque<TrackHistoryEntry>()
 
     private var currentVolume = 0
 
@@ -254,6 +273,29 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
         previousMediaController.setVolumeTo(newAbsoluteVolume, 0)
     }
 
+    private fun seekTo(positionMs: Long) {
+        currentMediaController?.transportControls?.seekTo(positionMs)
+    }
+
+    private fun togglePlayPause() {
+        currentMediaController?.let {
+            it.dispatchMediaButtonEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
+            it.dispatchMediaButtonEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
+        }
+    }
+
+    /** Drives the watch's quick-actions panel - these always work, regardless of button config. */
+    private fun executeQuickAction(name: String) {
+        val action: PhoneAction = when (name) {
+            "like" -> LikeAction(this)
+            "shuffle" -> ShuffleAction(this)
+            "repeat" -> RepeatAction(this)
+            else -> return
+        }
+
+        executeAction(action)
+    }
+
     private fun executeAction(buttonInfo: ButtonInfo) {
         val playing = currentMediaController?.isPlaying() == true
 
@@ -297,19 +339,60 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
         if (mediaController == null) {
             musicStateBuilder.playing = false
         } else {
-            musicStateBuilder.playing = mediaController.playbackState?.isPlaying() == true
+            val playbackState = mediaController.playbackState
+
+            musicStateBuilder.playing = playbackState?.isPlaying() == true
 
             val meta = mediaController.metadata
             if (meta != null) {
-                meta.getString(MediaMetadata.METADATA_KEY_ARTIST)?.let {
-                    musicStateBuilder.artist = it
+                val newArtist = meta.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: ""
+                val newTitle = meta.getString(MediaMetadata.METADATA_KEY_TITLE) ?: ""
+
+                if (newArtist.isNotEmpty()) {
+                    musicStateBuilder.artist = newArtist
                 }
-                meta.getString(MediaMetadata.METADATA_KEY_TITLE)?.let {
-                    musicStateBuilder.title = it
+                if (newTitle.isNotEmpty()) {
+                    musicStateBuilder.title = newTitle
                 }
+
+                recordTrackHistoryIfChanged(newArtist, newTitle)
 
                 albumArt = meta.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
                     ?: meta.getBitmap(MediaMetadata.METADATA_KEY_ART)
+
+                val duration = meta.getLong(MediaMetadata.METADATA_KEY_DURATION)
+                if (duration > 0) {
+                    musicStateBuilder.durationMs = duration
+                }
+            }
+
+            if (playbackState != null) {
+                musicStateBuilder.positionMs = playbackState.position
+
+                // PlaybackState.lastPositionUpdateTime is in SystemClock.elapsedRealtime() time,
+                // not wall-clock time, and the watch has no way to relate its own elapsedRealtime
+                // (different device, different boot time) to ours. Convert it to an epoch
+                // timestamp here so the watch can extrapolate using its own currentTimeMillis().
+                val elapsedRealtimeNow = android.os.SystemClock.elapsedRealtime()
+                musicStateBuilder.positionUpdateTime =
+                        System.currentTimeMillis() - (elapsedRealtimeNow - playbackState.lastPositionUpdateTime)
+
+                musicStateBuilder.playbackSpeed = playbackState.playbackSpeed
+                musicStateBuilder.seekable = (playbackState.actions and PlaybackState.ACTION_SEEK_TO) != 0L
+            }
+
+            // Shuffle/repeat only exist on the AndroidX media-compat layer, not the framework
+            // MediaController API - see ShuffleAction/RepeatAction for why this wrapping works.
+            val compatController = MediaControllerCompat(
+                    this,
+                    MediaSessionCompat.Token.fromToken(mediaController.sessionToken)
+            )
+            musicStateBuilder.shuffleEnabled =
+                    compatController.shuffleMode != PlaybackStateCompat.SHUFFLE_MODE_NONE
+            musicStateBuilder.repeatMode = when (compatController.repeatMode) {
+                PlaybackStateCompat.REPEAT_MODE_ALL, PlaybackStateCompat.REPEAT_MODE_GROUP -> 1
+                PlaybackStateCompat.REPEAT_MODE_ONE -> 2
+                else -> 0
             }
 
             currentVolume = mediaController.playbackInfo?.currentVolume ?: 0
@@ -321,12 +404,25 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
 
 
         val musicState = musicStateBuilder.build()
+
+        // MediaMetadata is immutable, so as long as the source app hasn't published a new
+        // MediaMetadata object, repeated getBitmap() calls return the same Bitmap reference -
+        // making reference equality a cheap, reliable signal for "is this actually new art".
+        // This must be checked in addition to equalsIgnoringTime(): some apps publish metadata
+        // in two steps (text fields, then artwork moments later); without this, the artwork-only
+        // update would look "equal" on every field that comparison checks and get silently
+        // dropped, leaving the watch stuck on stale (or missing) album art until some other
+        // unrelated change (e.g. pause) forced a retransmit.
+        val albumArtChanged = albumArt !== previousAlbumArt
+
         // Do not waste BT bandwitch and re-transmit equal music state
-        if (musicState.equalsIgnoringTime(previousMusicState)) {
+        if (!albumArtChanged && musicState.equalsIgnoringTime(previousMusicState)) {
             return
         }
 
         Timber.d("TransmittingToWear %s", musicState)
+        previousMusicState = musicState
+        previousAlbumArt = albumArt
         transmitToWear(musicState, albumArt)
     }
 
@@ -421,6 +517,22 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
         }
     }
 
+    private fun recordTrackHistoryIfChanged(newArtist: String, newTitle: String) {
+        if (newTitle.isEmpty() || (newArtist == lastTrackArtist && newTitle == lastTrackTitle)) {
+            return
+        }
+
+        if (lastTrackTitle.isNotEmpty()) {
+            recentTrackHistory.addFirst(TrackHistoryEntry(lastTrackArtist, lastTrackTitle))
+            while (recentTrackHistory.size > MAX_TRACK_HISTORY_SIZE) {
+                recentTrackHistory.removeLast()
+            }
+        }
+
+        lastTrackArtist = newArtist
+        lastTrackTitle = newTitle
+    }
+
     private fun openPlaybackQueueOnWatch() {
         executeAction(OpenPlaylistAction(this))
     }
@@ -437,6 +549,15 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
             }
             CommPaths.MESSAGE_CHANGE_VOLUME -> {
                 updateVolume(FloatPacker.unpackFloat(event.data))
+            }
+            CommPaths.MESSAGE_SEEK_TO -> {
+                seekTo(ByteBuffer.wrap(event.data).long)
+            }
+            CommPaths.MESSAGE_TOGGLE_PLAY_PAUSE -> {
+                togglePlayPause()
+            }
+            CommPaths.MESSAGE_QUICK_ACTION -> {
+                executeQuickAction(String(event.data, Charsets.UTF_8))
             }
             CommPaths.MESSAGE_EXECUTE_ACTION -> {
                 executeAction(ButtonInfo(WatchActions.ProtoButtonInfo.parseFrom(event.data)))
@@ -495,12 +616,30 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
     }
 
     private fun MusicState.equalsIgnoringTime(other: MusicState?): Boolean {
-        return other != null &&
-                other.playing == playing &&
-                other.artist == artist &&
-                other.title == title &&
-                other.volume == volume &&
-                other.error == error
+        if (other == null ||
+                other.playing != playing ||
+                other.artist != artist ||
+                other.title != title ||
+                other.volume != volume ||
+                other.error != error ||
+                other.durationMs != durationMs ||
+                other.seekable != seekable
+        ) {
+            return false
+        }
+
+        // positionMs naturally drifts forward every time playback is polled, so comparing it
+        // directly would defeat the point of this check. Instead, extrapolate where playback
+        // "should" be based on the previous state and only treat a bigger-than-expected jump
+        // (a real seek, or a track restart) as a change worth re-transmitting for.
+        val elapsedSincePrevious = positionUpdateTime - other.positionUpdateTime
+        val expectedPosition = if (other.playing) {
+            other.positionMs + (elapsedSincePrevious * other.playbackSpeed).toLong()
+        } else {
+            other.positionMs
+        }
+
+        return Math.abs(positionMs - expectedPosition) <= SEEK_DETECTION_THRESHOLD_MS
     }
 
     private val volumeContentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {

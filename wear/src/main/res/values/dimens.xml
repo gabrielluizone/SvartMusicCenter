@@ -3,7 +3,13 @@
     <dimen name="music_screen_icon_offset">4dp</dimen>
     <dimen name="music_screen_icon_size">24dp</dimen>
     <dimen name="music_screen_text_margin">30dp</dimen>
-    <dimen name="music_screen_volume_bar_width">30dp</dimen>
+    <dimen name="seek_bar_width">6dp</dimen>
+    <dimen name="seek_bar_touch_band">26dp</dimen>
+
+    <dimen name="center_tap_zone_size">110dp</dimen>
 
     <dimen name="notification_margin">6dp</dimen>
+
+    <dimen name="quick_action_button_size">52dp</dimen>
+    <dimen name="quick_action_icon_size">26dp</dimen>
 </resources>

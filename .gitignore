@@ -31,3 +31,9 @@ mobile/google-services.json
 
 # Ignore build protobuf files
 /common/src/main/java/com/matejdro/wearmusiccenter/proto
+
+# Local tooling/scratch, not part of the app
+.claude/
+.playwright-mcp/
+promp.txt
+centering_check.png

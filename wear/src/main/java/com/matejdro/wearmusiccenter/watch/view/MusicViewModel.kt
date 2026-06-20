@@ -33,6 +33,10 @@ import javax.inject.Inject
 import kotlin.math.max
 import kotlin.math.min
 
+data class PlaybackPosition(val positionMs: Long, val durationMs: Long, val seekable: Boolean)
+
+private const val POSITION_TICK_INTERVAL_MS = 500L
+
 @HiltViewModel
 class MusicViewModel @Inject constructor(
         private val application: Application,
@@ -54,6 +58,25 @@ class MusicViewModel @Inject constructor(
     val notification: LiveData<Notification> = phoneConnection.notification
 
     val volume = MutableLiveData<Float>()
+    val playbackPosition = MutableLiveData<PlaybackPosition>()
+    private var latestMusicState: MusicState? = null
+    private var continuousTickingEnabled = true
+    private val positionTickRunnable = Runnable { tickPlaybackPosition() }
+
+    /**
+     * In ambient mode the screen should repaint as little as possible to save battery and avoid
+     * burn-in, so the 500ms ticker is paused entirely (the position isn't even shown there).
+     */
+    fun setContinuousPositionTicking(enabled: Boolean) {
+        continuousTickingEnabled = enabled
+
+        if (!enabled) {
+            handler.removeCallbacks(positionTickRunnable)
+        } else if (latestMusicState?.playing == true) {
+            tickPlaybackPosition()
+        }
+    }
+
     val popupVolumeBar = SingleLiveEvent<Unit>()
     val closeActionsMenu = SingleLiveEvent<Unit>()
     val openActionsMenu = SingleLiveEvent<Unit>()
@@ -137,6 +160,48 @@ class MusicViewModel @Inject constructor(
         phoneConnection.sendVolume(newVolume)
     }
 
+    /** Seeks to [fraction] (0f..1f) of the current track's duration. No-op if not seekable. */
+    fun seekTo(fraction: Float) {
+        val state = latestMusicState ?: return
+        if (!state.seekable || state.durationMs <= 0) {
+            return
+        }
+
+        val positionMs = (fraction * state.durationMs).toLong()
+
+        // Update our local snapshot too (not just the LiveData), otherwise the next scheduled
+        // tick - still running every POSITION_TICK_INTERVAL_MS off the pre-seek snapshot - would
+        // immediately overwrite this optimistic value with a position extrapolated from stale
+        // data, making the seek look like it "snaps back" until the phone confirms the real one.
+        latestMusicState = state.toBuilder()
+                .setPositionMs(positionMs)
+                .setPositionUpdateTime(System.currentTimeMillis())
+                .build()
+
+        playbackPosition.value = PlaybackPosition(positionMs, state.durationMs, state.seekable)
+        phoneConnection.sendSeek(positionMs)
+    }
+
+    private fun tickPlaybackPosition() {
+        val state = latestMusicState
+        if (state != null) {
+            val elapsedWhilePlaying = if (state.playing) {
+                ((System.currentTimeMillis() - state.positionUpdateTime) * state.playbackSpeed).toLong()
+            } else {
+                0L
+            }
+
+            val maxPosition = if (state.durationMs > 0) state.durationMs else Long.MAX_VALUE
+            val interpolatedPosition = (state.positionMs + elapsedWhilePlaying).coerceIn(0L, maxPosition)
+
+            playbackPosition.value = PlaybackPosition(interpolatedPosition, state.durationMs, state.seekable)
+        }
+
+        if (state?.playing == true && continuousTickingEnabled) {
+            handler.postDelayed(positionTickRunnable, POSITION_TICK_INTERVAL_MS)
+        }
+    }
+
     fun sendManualCloseMessage() {
         viewModelScope.launchWithErrorHandling(application, musicState) {
             phoneConnection.sendManualCloseMessage()
@@ -146,6 +211,21 @@ class MusicViewModel @Inject constructor(
     fun openPlaybackQueue() {
         viewModelScope.launchWithErrorHandling(application, musicState) {
             phoneConnection.openPlaybackQueue()
+        }
+    }
+
+    /** Toggles play/pause directly, independent of however the four quadrants are configured. */
+    fun togglePlayPause() {
+        viewModelScope.launchWithErrorHandling(application, musicState) {
+            phoneConnection.togglePlayPause()
+        }
+    }
+
+    /** Triggers like/shuffle/repeat directly from the quick-actions panel, regardless of how
+     *  (or whether) the four quadrants are configured. [name] is "like", "shuffle" or "repeat". */
+    fun sendQuickAction(name: String) {
+        viewModelScope.launchWithErrorHandling(application, musicState) {
+            phoneConnection.sendQuickAction(name)
         }
     }
 
@@ -179,6 +259,12 @@ class MusicViewModel @Inject constructor(
         swapConfig(newConfig)
 
         musicState.value = it
+
+        latestMusicState = newMusicState
+        handler.removeCallbacks(positionTickRunnable)
+        if (newMusicState != null) {
+            tickPlaybackPosition()
+        }
     }
 
     private fun swapConfig(newConfig: WatchActionConfigProvider) {
@@ -206,5 +292,10 @@ class MusicViewModel @Inject constructor(
 
     private val closeRunnable = Runnable {
         closeApp.call()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        handler.removeCallbacks(positionTickRunnable)
     }
 }

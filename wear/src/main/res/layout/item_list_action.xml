@@ -3,15 +3,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?android:selectableItemBackground"
+    android:layout_marginStart="6dp"
+    android:layout_marginEnd="6dp"
+    android:layout_marginTop="3dp"
+    android:layout_marginBottom="3dp"
+    android:background="@drawable/glass_card_background"
+    android:foreground="?android:selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingBottom="5dp"
+    android:paddingBottom="8dp"
     android:paddingLeft="10dp"
     android:paddingRight="10dp"
-    android:paddingTop="5dp">
+    android:paddingTop="8dp">
 
     <ImageView
         android:id="@+id/icon"
@@ -23,18 +28,40 @@
         tools:ignore="ContentDescription"
         tools:src="@drawable/action_play" />
 
-    <TextView
-        android:id="@+id/text"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        android:gravity="center_vertical"
-        android:maxWidth="150dp"
-        android:minHeight="?android:attr/listPreferredItemHeightSmall"
-        android:textColor="@color/white"
-        android:textSize="20sp"
-        android:maxLines="2"
-        android:ellipsize="end"
-        tools:text="Start Playback" />
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/google_sans"
+            android:maxLines="1"
+            android:minHeight="?android:attr/listPreferredItemHeightSmall"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            tools:text="Start Playback" />
+
+        <TextView
+            android:id="@+id/text_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/google_sans"
+            android:maxLines="1"
+            android:textColor="@color/glass_surface_subtitle_text"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Subtitle"
+            tools:visibility="visible" />
+
+    </LinearLayout>
 
 </LinearLayout>
