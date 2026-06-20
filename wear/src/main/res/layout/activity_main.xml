@@ -251,8 +251,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
             android:gravity="center_horizontal"
             android:orientation="vertical"
             android:visibility="gone">
@@ -295,8 +295,8 @@
                     android:id="@+id/quick_action_like"
                     android:layout_width="@dimen/quick_action_button_width"
                     android:layout_height="@dimen/quick_action_button_height"
-                    android:layout_marginEnd="6dp"
-                    android:background="@drawable/glass_circle_background"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/glass_pill_background"
                     android:clickable="true"
                     android:contentDescription="@string/quick_action_like"
                     android:focusable="true"
@@ -307,9 +307,9 @@
                     android:id="@+id/quick_action_shuffle"
                     android:layout_width="@dimen/quick_action_button_width"
                     android:layout_height="@dimen/quick_action_button_height"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="6dp"
-                    android:background="@drawable/glass_circle_background"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/glass_pill_background"
                     android:clickable="true"
                     android:contentDescription="@string/quick_action_shuffle"
                     android:focusable="true"
@@ -320,8 +320,8 @@
                     android:id="@+id/quick_action_repeat"
                     android:layout_width="@dimen/quick_action_button_width"
                     android:layout_height="@dimen/quick_action_button_height"
-                    android:layout_marginStart="6dp"
-                    android:background="@drawable/glass_circle_background"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/glass_pill_background"
                     android:clickable="true"
                     android:contentDescription="@string/quick_action_repeat"
                     android:focusable="true"
@@ -340,14 +340,14 @@
                 android:focusable="true"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingTop="5dp"
-                android:paddingEnd="18dp"
-                android:paddingBottom="5dp">
+                android:paddingStart="18dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="8dp">
 
                 <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
                     android:layout_marginEnd="8dp"
                     android:src="@drawable/ic_queue_music"
                     tools:ignore="ContentDescription" />
@@ -365,7 +365,7 @@
                         android:includeFontPadding="false"
                         android:text="@string/quick_action_up_next"
                         android:textColor="@color/white"
-                        android:textSize="13sp"
+                        android:textSize="14sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -377,7 +377,7 @@
                         android:includeFontPadding="false"
                         android:maxLines="1"
                         android:textColor="@color/glass_surface_subtitle_text"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:visibility="gone"
                         tools:text="Next track name"
                         tools:visibility="visible" />

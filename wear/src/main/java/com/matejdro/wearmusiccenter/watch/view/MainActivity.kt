@@ -84,6 +84,7 @@ class MainActivity : WearCompanionWatchActivity(),
         private const val MESSAGE_DISMISS_NOTIFICATION = 12
 
         private const val VOLUME_BAR_TIMEOUT = 1000L
+        private const val ROTARY_DEADZONE = 6f
         private const val OVERLAY_FADE_OUT_MS = 150L
         private const val OVERLAY_FADE_IN_MS = 80L
         private const val BLUR_RADIUS_PX = 35f
@@ -882,10 +883,18 @@ class MainActivity : WearCompanionWatchActivity(),
                 return stemButtonsManager.simulateKeyPress(keyCode)
             }
 
+            // getScaledScrollFactor() is tuned for scrolling lists by a full screen-ish amount
+            // per detent, so even a tiny/accidental crown nudge produces a surprisingly large
+            // delta for fine-grained volume control - a deadzone filters out that noise, and the
+            // base factor is well below the old list-scrolling-derived value on top of it.
+            if (abs(delta) < ROTARY_DEADZONE) {
+                return true
+            }
+
             val multipler =
                     Preferences.getInt(preferences, MiscPreferences.ROTATING_CROWN_SENSITIVITY) / 100f
 
-            binding.volumeBar.incrementVolume(delta * 0.0025f * multipler)
+            binding.volumeBar.incrementVolume(delta * 0.0011f * multipler)
             viewModel.updateVolume(binding.volumeBar.volume)
             showVolumeBar()
 
@@ -1065,7 +1074,7 @@ class MainActivity : WearCompanionWatchActivity(),
             view.background = accentCircleDrawable()
             view.setColorFilter(contrastingIconColor(currentAccentColor))
         } else {
-            view.background = AppCompatResources.getDrawable(this, R.drawable.glass_circle_background)
+            view.background = AppCompatResources.getDrawable(this, R.drawable.glass_pill_background)
             view.clearColorFilter()
         }
     }
