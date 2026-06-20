@@ -244,6 +244,10 @@ class MainActivity : WearCompanionWatchActivity(),
         // stays visually dominant even when a long title has to shrink to fit two lines.
         binding.textArtist.enableSmartWordSizing(maxSizeSp = 16f, minSizeSp = 9f)
         binding.textTitle.enableSmartWordSizing(maxSizeSp = 46f, minSizeSp = 25f)
+        // Same idea for the quick-actions panel's copy of the title/artist - without this a long
+        // title just sat there clipped instead of shrinking a bit and then scrolling.
+        binding.quickActionPanelTitle.enableSmartWordSizing(maxSizeSp = 18f, minSizeSp = 15f)
+        binding.quickActionPanelArtist.enableSmartWordSizing(maxSizeSp = 13f, minSizeSp = 11f)
 
         binding.drawerLayout.setDrawerStateCallback(drawerStateCallback)
         binding.notificationPopup.clickableFrame.setOnClickListener { onNotificationTapped() }
@@ -1065,8 +1069,12 @@ class MainActivity : WearCompanionWatchActivity(),
 
     private fun isQuickActionsPanelShowing() = binding.quickActionsPanel.visibility == View.VISIBLE
 
+    // Same stadium/capsule shape as glass_pill_background.xml (the inactive state) - this used
+    // to be a plain oval, which made the active button look like a different shape from the
+    // other two instead of just a different color.
     private fun accentCircleDrawable(): GradientDrawable = GradientDrawable().apply {
-        shape = GradientDrawable.OVAL
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = 999f
         setColor(currentAccentColor)
     }
 

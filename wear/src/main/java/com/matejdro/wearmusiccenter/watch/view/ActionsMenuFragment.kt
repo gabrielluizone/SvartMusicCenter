@@ -205,13 +205,18 @@ class ActionsMenuFragment : Fragment() {
                 // per-entry album art thumbnail, thin pill-shaped background (same proportions as
                 // the quick-actions panel's Up Next bubble) instead of the regular action list's
                 // taller glass card.
-                val verticalPadding = (11 * resources.displayMetrics.density).toInt()
-                val horizontalPadding = (18 * resources.displayMetrics.density).toInt()
+                val verticalPadding = (6 * resources.displayMetrics.density).toInt()
+                val horizontalPadding = (16 * resources.displayMetrics.density).toInt()
+                val tightMargin = (2 * resources.displayMetrics.density).toInt()
                 holder.icon.visibility = View.GONE
                 holder.title.minHeight = 0
                 holder.itemView.setPadding(
                         horizontalPadding, verticalPadding, horizontalPadding, verticalPadding
                 )
+                (holder.itemView.layoutParams as ViewGroup.MarginLayoutParams).apply {
+                    topMargin = tightMargin
+                    bottomMargin = tightMargin
+                }
                 holder.title.text = customItem.listItem.entryTitle
 
                 val subtitle = customItem.listItem.entrySubtitle
@@ -258,6 +263,10 @@ class ActionsMenuFragment : Fragment() {
                         holder.itemView.paddingRight,
                         holder.defaultPaddingBottom
                 )
+                (holder.itemView.layoutParams as ViewGroup.MarginLayoutParams).apply {
+                    topMargin = holder.defaultMarginTop
+                    bottomMargin = holder.defaultMarginBottom
+                }
                 holder.itemView.background = AppCompatResources.getDrawable(requireContext(), R.drawable.glass_card_background)
                 holder.title.text = configItem.title
                 holder.title.setTextColor(Color.WHITE)
@@ -305,6 +314,8 @@ class ActionsMenuFragment : Fragment() {
         val defaultTitleMinHeight = title.minHeight
         val defaultPaddingTop = itemView.paddingTop
         val defaultPaddingBottom = itemView.paddingBottom
+        val defaultMarginTop = (itemView.layoutParams as ViewGroup.MarginLayoutParams).topMargin
+        val defaultMarginBottom = (itemView.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin
 
         init {
             itemView.tag = this
