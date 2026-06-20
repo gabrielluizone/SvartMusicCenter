@@ -20,5 +20,6 @@ message MusicState {
   optional bool seekable = 11;
   optional bool shuffleEnabled = 12 [default = false];
   optional int32 repeatMode = 13 [default = 0]; // 0=off, 1=all, 2=one
+  optional bool liked = 14 [default = false];
 }
 

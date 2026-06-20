@@ -28,6 +28,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
 import androidx.lifecycle.coroutineScope
@@ -80,10 +81,8 @@ class MainActivity : WearCompanionWatchActivity(),
         private const val MESSAGE_HIDE_VOLUME = 10
         private const val MESSAGE_UPDATE_CLOCK = 11
         private const val MESSAGE_DISMISS_NOTIFICATION = 12
-        private const val MESSAGE_HIDE_QUICK_ACTIONS = 13
 
         private const val VOLUME_BAR_TIMEOUT = 1000L
-        private const val QUICK_ACTIONS_TIMEOUT = 5000L
         private const val OVERLAY_FADE_OUT_MS = 150L
         private const val OVERLAY_FADE_IN_MS = 80L
         private const val BLUR_RADIUS_PX = 35f
@@ -109,6 +108,7 @@ class MainActivity : WearCompanionWatchActivity(),
     private var currentAccentColor: Int = 0
     private var shuffleEnabled: Boolean = false
     private var repeatMode: Int = 0
+    private var liked: Boolean = false
 
     private val defaultSeekBarColor by lazy { getColor(R.color.theme_accent) }
 
@@ -248,6 +248,9 @@ class MainActivity : WearCompanionWatchActivity(),
                 supportFragmentManager.findFragmentById(R.id.drawer_content) as ActionsMenuFragment
 
         onBackPressedDispatcher.addCallback(this, backButtonOverrideCallback)
+        // Registered after backButtonOverrideCallback so it takes priority while enabled - the
+        // back gesture should close the quick-actions panel instead of exiting the app.
+        onBackPressedDispatcher.addCallback(this, quickActionsPanelBackCallback)
     }
 
     override fun onStart() {
@@ -328,6 +331,7 @@ class MainActivity : WearCompanionWatchActivity(),
 
             shuffleEnabled = it.data?.shuffleEnabled == true
             repeatMode = it.data?.repeatMode ?: 0
+            liked = it.data?.liked == true
             updateQuickActionButtonStates()
         } else if (it.status == Resource.Status.ERROR) {
             setStatusMessageOnArtistLine(getString(R.string.error))
@@ -381,6 +385,11 @@ class MainActivity : WearCompanionWatchActivity(),
         binding.seekBar.progressColor = color
         binding.volumeBar.progressColor = color
         binding.textArtist.setTextColor(color)
+
+        if (isQuickActionsPanelShowing()) {
+            binding.quickActionPanelArtist.setTextColor(color)
+            updateQuickActionButtonStates()
+        }
     }
 
     /**
@@ -664,6 +673,12 @@ class MainActivity : WearCompanionWatchActivity(),
     val backButtonOverrideCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
             stemButtonsManager.simulateKeyPress(KeyEvent.KEYCODE_BACK)
+        }
+    }
+
+    private val quickActionsPanelBackCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            hideOverlay()
         }
     }
 
@@ -977,13 +992,14 @@ class MainActivity : WearCompanionWatchActivity(),
         binding.volumeIconTop.visibility = View.GONE
         binding.volumeIconBottom.visibility = View.GONE
         binding.quickActionsPanel.visibility = View.GONE
+        quickActionsPanelBackCallback.isEnabled = false
 
         handler.removeMessages(MESSAGE_HIDE_VOLUME)
-        handler.removeMessages(MESSAGE_HIDE_QUICK_ACTIONS)
     }
 
     /** Opened by double-tapping center_tap_zone - like/shuffle/repeat shortcuts plus a way into
-     *  the queue, on top of the same blur/dim scrim the volume and seek previews use. */
+     *  the queue, on top of the same blur/dim scrim the volume and seek previews use. Stays open
+     *  until the user taps outside it, taps Up Next, or presses back - it does not auto-hide. */
     private fun showQuickActionsPanel() {
         showOverlay()
 
@@ -993,9 +1009,11 @@ class MainActivity : WearCompanionWatchActivity(),
         binding.textVolumePercent.visibility = View.GONE
         binding.textSeekTime.visibility = View.GONE
         binding.quickActionsPanel.visibility = View.VISIBLE
+        quickActionsPanelBackCallback.isEnabled = true
 
         binding.quickActionPanelTitle.text = binding.textTitle.text
         binding.quickActionPanelArtist.text = binding.textArtist.text
+        binding.quickActionPanelArtist.setTextColor(currentAccentColor)
         binding.quickActionPanelArtist.visibility =
                 if (binding.quickActionPanelArtist.text.isNullOrEmpty()) View.GONE else View.VISIBLE
 
@@ -1006,9 +1024,6 @@ class MainActivity : WearCompanionWatchActivity(),
         // text in place without yanking the user into the full drawer while this panel is open.
         viewModel.customList.value?.let { updateUpNextPreview(it) }
         viewModel.openPlaybackQueue()
-
-        handler.removeMessages(MESSAGE_HIDE_QUICK_ACTIONS)
-        handler.sendEmptyMessageDelayed(MESSAGE_HIDE_QUICK_ACTIONS, QUICK_ACTIONS_TIMEOUT)
     }
 
     private fun isQuickActionsPanelShowing() = binding.quickActionsPanel.visibility == View.VISIBLE
@@ -1018,18 +1033,26 @@ class MainActivity : WearCompanionWatchActivity(),
         setColor(currentAccentColor)
     }
 
+    /** White icons can disappear against a light album-art accent color, so the icon itself
+     *  flips to black/white depending on how light or dark [backgroundColor] is. */
+    private fun contrastingIconColor(backgroundColor: Int): Int =
+            if (ColorUtils.calculateLuminance(backgroundColor) > 0.5) Color.BLACK else Color.WHITE
+
     private fun setQuickActionButtonActive(view: ImageView, active: Boolean) {
-        view.background = if (active) {
-            accentCircleDrawable()
+        if (active) {
+            view.background = accentCircleDrawable()
+            view.setColorFilter(contrastingIconColor(currentAccentColor))
         } else {
-            AppCompatResources.getDrawable(this, R.drawable.glass_circle_background)
+            view.background = AppCompatResources.getDrawable(this, R.drawable.glass_circle_background)
+            view.clearColorFilter()
         }
     }
 
-    /** Reflects confirmed shuffle/repeat state (from the phone) on the two buttons that have a
-     *  real persisted on/off state. There is no generic cross-app API to know whether the
-     *  current track is "liked", so the like button only gets transient press feedback. */
+    /** Reflects confirmed shuffle/repeat/like state (from the phone) on the three buttons.
+     *  Shuffle/repeat are reliable (real MediaSession state); "liked" is a best-effort guess
+     *  since there's no generic cross-app API for it - see LikeAction.isCurrentlyLiked(). */
     private fun updateQuickActionButtonStates() {
+        setQuickActionButtonActive(binding.quickActionLike, liked)
         setQuickActionButtonActive(binding.quickActionShuffle, shuffleEnabled)
         setQuickActionButtonActive(binding.quickActionRepeat, repeatMode != 0)
     }
@@ -1037,8 +1060,12 @@ class MainActivity : WearCompanionWatchActivity(),
     private val quickActionPressFeedback = View.OnTouchListener { v, event ->
         val imageView = v as ImageView
         when (event.action) {
-            MotionEvent.ACTION_DOWN -> imageView.background = accentCircleDrawable()
+            MotionEvent.ACTION_DOWN -> {
+                imageView.background = accentCircleDrawable()
+                imageView.setColorFilter(contrastingIconColor(currentAccentColor))
+            }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> when (imageView) {
+                binding.quickActionLike -> setQuickActionButtonActive(imageView, liked)
                 binding.quickActionShuffle -> setQuickActionButtonActive(imageView, shuffleEnabled)
                 binding.quickActionRepeat -> setQuickActionButtonActive(imageView, repeatMode != 0)
                 else -> setQuickActionButtonActive(imageView, false)
@@ -1162,9 +1189,6 @@ class MainActivity : WearCompanionWatchActivity(),
                 }
                 MESSAGE_DISMISS_NOTIFICATION -> {
                     activity.get()?.hideNotification()
-                }
-                MESSAGE_HIDE_QUICK_ACTIONS -> {
-                    activity.get()?.hideOverlay()
                 }
                 else -> super.handleMessage(msg)
             }

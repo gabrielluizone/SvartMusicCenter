@@ -379,6 +379,7 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
 
                 musicStateBuilder.playbackSpeed = playbackState.playbackSpeed
                 musicStateBuilder.seekable = (playbackState.actions and PlaybackState.ACTION_SEEK_TO) != 0L
+                musicStateBuilder.liked = LikeAction.isCurrentlyLiked(playbackState)
             }
 
             // Shuffle/repeat only exist on the AndroidX media-compat layer, not the framework
