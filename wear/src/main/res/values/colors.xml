@@ -17,6 +17,9 @@
     <color name="glass_surface_border">#33FFFFFF</color>
     <color name="glass_surface_highlight">#14FFFFFF</color>
     <color name="glass_surface_subtitle_text">#B3FFFFFF</color>
+    <!-- Opaque (not translucent) lifted dark for queue rows / Up Next bubble, so they read as
+         gentle pills on a pure-black drawer without any see-through gray. -->
+    <color name="queue_pill_fill">#1E1E20</color>
     <color name="album_art_scrim_top">#00000000</color>
     <color name="album_art_scrim_bottom">#CC000000</color>
 </resources>

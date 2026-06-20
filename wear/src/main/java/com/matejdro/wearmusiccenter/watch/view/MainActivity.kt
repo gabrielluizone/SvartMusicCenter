@@ -860,6 +860,12 @@ class MainActivity : WearCompanionWatchActivity(),
             return false
         }
 
+        // The quick-actions panel sits on top of the volume bar's overlay - rotating the crown
+        // while it's open shouldn't pop the volume UI over the like/shuffle/repeat buttons.
+        if (isQuickActionsPanelShowing()) {
+            return false
+        }
+
         if (rotatingInputDisabledUntil > System.currentTimeMillis()) {
             return false
         }

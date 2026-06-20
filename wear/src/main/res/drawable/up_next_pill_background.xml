@@ -1,22 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A corner radius this large always gets clamped to half the row's actual height at draw
-     time, guaranteeing a true stadium/cylinder shape (fully round ends) regardless of how
-     tall the row ends up - unlike a fixed dp radius, which only looks "rounded" once the
-     row's content (icon + two lines of text) makes it taller than queue_pill_background's. -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="@color/glass_surface_fill" />
-            <corners android:radius="999dp" />
-        </shape>
-    </item>
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="@android:color/transparent" />
-            <corners android:radius="999dp" />
-            <stroke
-                android:width="1dp"
-                android:color="@color/glass_surface_border" />
-        </shape>
-    </item>
-</layer-list>
+<!-- Subtle lifted-dark fill, no border. A corner radius this large always clamps to half the
+     row's actual height at draw time, guaranteeing a true stadium/cylinder shape regardless of
+     how tall the row ends up. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/queue_pill_fill" />
+    <corners android:radius="999dp" />
+</shape>
