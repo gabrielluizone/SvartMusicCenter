@@ -205,7 +205,7 @@ class ActionsMenuFragment : Fragment() {
                 // per-entry album art thumbnail, thin pill-shaped background (same proportions as
                 // the quick-actions panel's Up Next bubble) instead of the regular action list's
                 // taller glass card.
-                val verticalPadding = (8 * resources.displayMetrics.density).toInt()
+                val verticalPadding = (11 * resources.displayMetrics.density).toInt()
                 val horizontalPadding = (18 * resources.displayMetrics.density).toInt()
                 holder.icon.visibility = View.GONE
                 holder.title.minHeight = 0
@@ -220,16 +220,15 @@ class ActionsMenuFragment : Fragment() {
 
                 // Highlight whichever row matches the track currently playing, instead of
                 // leaving every row the same flat black. The accent color is boosted away from
-                // black first - a solid color is used (not a translucent wash, which made the
-                // text the same color as its own background) and the text color flips to
-                // black/white depending on how light the boosted color ends up being.
+                // black first (it's a solid color, not a translucent wash - that previously made
+                // the text the same color as its own background) and is always light enough that
+                // black text reads clearly on it.
                 val isActive = customItem.listItem.entryId == customMenuItems.activeEntryId
                 if (isActive) {
                     val highlightColor = boostForDarkBackground(activity.currentAccentColor)
-                    val textColor = contrastingTextColor(highlightColor)
                     holder.itemView.background = pillDrawable(highlightColor)
-                    holder.title.setTextColor(textColor)
-                    holder.subtitle.setTextColor(textColor)
+                    holder.title.setTextColor(Color.BLACK)
+                    holder.subtitle.setTextColor(Color.BLACK)
                 } else {
                     holder.itemView.background =
                             AppCompatResources.getDrawable(requireContext(), R.drawable.queue_pill_background)
@@ -278,18 +277,16 @@ class ActionsMenuFragment : Fragment() {
 
         /** Raw palette colors can be very dark on dark album art, which would be nearly
          *  invisible against this list's plain black background - clamp lightness/saturation up
-         *  so the highlight always reads clearly, the same way a light theme's accent gets a
-         *  brighter dark-theme variant instead of being reused as-is. */
+         *  so the highlight always reads clearly and is light enough for black text on top of
+         *  it, the same way a light theme's accent gets a brighter dark-theme variant instead of
+         *  being reused as-is. */
         private fun boostForDarkBackground(color: Int): Int {
             val hsl = FloatArray(3)
             ColorUtils.colorToHSL(color, hsl)
             hsl[1] = hsl[1].coerceAtLeast(0.45f)
-            hsl[2] = hsl[2].coerceIn(0.55f, 0.75f)
+            hsl[2] = hsl[2].coerceIn(0.62f, 0.82f)
             return ColorUtils.HSLToColor(hsl)
         }
-
-        private fun contrastingTextColor(backgroundColor: Int): Int =
-                if (ColorUtils.calculateLuminance(backgroundColor) > 0.5) Color.BLACK else Color.WHITE
 
         override fun getItemCount(): Int {
             return customMenuItems?.items?.size ?: menuItems.size

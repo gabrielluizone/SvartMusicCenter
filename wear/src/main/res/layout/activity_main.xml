@@ -339,11 +339,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
+                android:minHeight="@dimen/quick_action_button_height"
                 android:orientation="horizontal"
                 android:paddingStart="18dp"
-                android:paddingTop="8dp"
+                android:paddingTop="11dp"
                 android:paddingEnd="20dp"
-                android:paddingBottom="8dp">
+                android:paddingBottom="11dp">
 
                 <ImageView
                     android:layout_width="18dp"
