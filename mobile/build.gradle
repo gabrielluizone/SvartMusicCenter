@@ -13,7 +13,7 @@ android {
         targetSdkVersion 30
         compileSdk 36
         versionCode 26
-        versionName "1.10"
+        versionName "1.11"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         wearAppUnbundled true
         multiDexEnabled true

@@ -1,0 +1,82 @@
+# Changelog
+
+## 1.11
+
+Dark "glass/acrylic" redesign of the watch UI, plus new playback features.
+
+### Visual redesign (wear)
+
+- New typeface (Google Sans) applied across the watch UI.
+- Dark, minimalist "acrylic/glass" visual style replacing the old flat
+  Material look (new `glass_card_background`, `glass_circle_background`,
+  `queue_pill_background` drawables, shared glass color tokens).
+- Redesigned circular volume control: left-edge vertical arc matching the
+  stock Wear OS look, thicker stroke to match the new outline icons.
+- New outline icons for volume up/down and the like button, redrawn as
+  simple stroked shapes instead of outlining the old filled icon paths
+  (which produced a messy/illegible result).
+- Ambient (always-on display) mode improvements: blurred album art behind
+  the clock instead of a flat dim, no black vignette, artist name shown in
+  plain bold (no outline effect) while the title keeps its outlined look.
+- Smart shrink-to-fit text sizing for long titles/artists (word-aware,
+  falls back to marquee only when a title genuinely can't fit).
+- Notification popup and queue/history list restyled to the new glass look.
+
+### Seek bar
+
+- New circular drag-to-seek progress bar around the now-playing screen,
+  with a live time-remaining overlay while dragging.
+- Position is interpolated locally between updates so the ring moves
+  smoothly without spamming the phone connection.
+
+### Like / shuffle / repeat
+
+- New "Like" action: looks for a like/favorite custom action exposed by
+  the currently playing app's media session (works with apps like YouTube
+  Music and Retro Music that expose one).
+- New "Shuffle" and "Repeat" actions, reading/writing real shuffle and
+  repeat-mode state through the AndroidX media-compat layer (the bare
+  framework `MediaController` API has no concept of either).
+- Real shuffle/repeat state is now synced from the phone to the watch and
+  reflected live on the quick-actions panel below.
+
+### Quick-actions panel
+
+- Double-tapping the center play/pause button opens a new panel with
+  Like / Shuffle / Repeat buttons plus an "Up Next" shortcut into the
+  queue - matching the stock Wear OS player's quick panel. Single-tap
+  still toggles play/pause as before.
+- Shows the current track's title/artist above the buttons.
+- Shuffle/repeat buttons highlight with a color pulled from the album
+  art when active; all three buttons flash that color on press.
+- "Up Next" opens the real queue (regardless of the swipe-up preference)
+  and previews the next track's name when a real queue is available.
+
+### Queue / playback history
+
+- New local play-history fallback: when the playing app doesn't expose a
+  real skippable queue (common on Android 10+), the watch now shows a
+  list of recently played tracks instead of an unhelpful error.
+- Queue/history rows redesigned to match the stock Wear OS queue look:
+  no album art thumbnails, title + artist on separate single (non-
+  wrapping) lines, pill-shaped rows.
+- Removed the old per-item dimming and circular curving effect from this
+  list - it was designed for the old single-line icon rows and looked
+  dated and "bent" against the new taller pill rows.
+
+### Other fixes found along the way
+
+- Fixed `OpenPlaylistAction` being mis-bound to the wrong (no-op) handler.
+- Fixed the seek bar freezing/snapping back during a drag (a leftover
+  position animator kept running underneath the touch).
+- Fixed the seek bar losing an in-progress drag whenever the finger
+  passed near a quadrant icon.
+- Fixed cross-device position drift by converting the phone's
+  `elapsedRealtime`-based playback position to a wall-clock timestamp
+  before sending it to the watch.
+- Fixed center-tap play/pause toggling losing touch events to the
+  quadrant layer underneath it once double-tap detection was added.
+
+## Earlier versions
+
+See the GitHub release history for changes before 1.11.
