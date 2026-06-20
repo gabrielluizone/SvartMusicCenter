@@ -11,6 +11,7 @@ message CustomList {
   required string listId = 1;
   required int64 listTimestamp = 2;
   repeated ListEntry actions = 3;
+  optional string activeEntryId = 4;
 
   message ListEntry {
     required string entryId = 1;

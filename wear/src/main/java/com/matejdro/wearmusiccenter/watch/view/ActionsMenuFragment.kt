@@ -4,6 +4,9 @@ import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
 import android.support.wearable.input.WearableButtons
@@ -15,6 +18,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
@@ -197,15 +202,36 @@ class ActionsMenuFragment : Fragment() {
                 val customItem = customMenuItems.items[position]
 
                 // Matches the stock Wear OS queue look: plain text rows (title + artist), no
-                // per-entry album art thumbnail, pill-shaped background instead of the regular
-                // action list's glass card.
+                // per-entry album art thumbnail, thin pill-shaped background instead of the
+                // regular action list's taller glass card.
+                val tightPadding = (5 * resources.displayMetrics.density).toInt()
                 holder.icon.visibility = View.GONE
-                holder.itemView.background = AppCompatResources.getDrawable(requireContext(), R.drawable.queue_pill_background)
+                holder.title.minHeight = 0
+                holder.itemView.setPadding(
+                        holder.itemView.paddingLeft, tightPadding, holder.itemView.paddingRight, tightPadding
+                )
                 holder.title.text = customItem.listItem.entryTitle
 
                 val subtitle = customItem.listItem.entrySubtitle
                 holder.subtitle.visibility = if (subtitle.isNullOrEmpty()) View.GONE else View.VISIBLE
                 holder.subtitle.text = subtitle
+
+                // Highlight whichever row matches the track currently playing, instead of
+                // leaving every row the same flat glass color.
+                val isActive = customItem.listItem.entryId == customMenuItems.activeEntryId
+                if (isActive) {
+                    val accent = activity.currentAccentColor
+                    holder.itemView.background = accentPillDrawable(accent)
+                    holder.title.setTextColor(accent)
+                    holder.subtitle.setTextColor(accent)
+                } else {
+                    holder.itemView.background =
+                            AppCompatResources.getDrawable(requireContext(), R.drawable.queue_pill_background)
+                    holder.title.setTextColor(Color.WHITE)
+                    holder.subtitle.setTextColor(
+                            ContextCompat.getColor(requireContext(), R.color.glass_surface_subtitle_text)
+                    )
+                }
 
                 // History entries (the fallback shown when the playing app, e.g. YouTube Music,
                 // doesn't expose a real skippable queue) are informational only - there is no
@@ -220,14 +246,28 @@ class ActionsMenuFragment : Fragment() {
 
                 holder.icon.visibility = View.VISIBLE
                 holder.icon.setImageDrawable(configItem.icon)
+                holder.title.minHeight = holder.defaultTitleMinHeight
+                holder.itemView.setPadding(
+                        holder.itemView.paddingLeft,
+                        holder.defaultPaddingTop,
+                        holder.itemView.paddingRight,
+                        holder.defaultPaddingBottom
+                )
                 holder.itemView.background = AppCompatResources.getDrawable(requireContext(), R.drawable.glass_card_background)
                 holder.title.text = configItem.title
+                holder.title.setTextColor(Color.WHITE)
                 holder.subtitle.visibility = View.GONE
 
                 val clickListener = if (alwaysPickCenter) null else holder
                 holder.itemView.setOnClickListener(clickListener)
                 holder.itemView.isClickable = !alwaysPickCenter
             }
+        }
+
+        private fun accentPillDrawable(accent: Int): Drawable = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 999f
+            setColor(ColorUtils.setAlphaComponent(accent, 110))
         }
 
         override fun getItemCount(): Int {
@@ -240,6 +280,13 @@ class ActionsMenuFragment : Fragment() {
         val icon: ImageView = itemView.findViewById(R.id.icon)
         val title: TextView = itemView.findViewById(R.id.text)
         val subtitle: TextView = itemView.findViewById(R.id.text_subtitle)
+
+        // Captured before any bind touches them, so queue/history rows (which use tighter
+        // spacing than the regular configurable action rows) can be reset back to these when
+        // a recycled row gets bound to a regular action item again.
+        val defaultTitleMinHeight = title.minHeight
+        val defaultPaddingTop = itemView.paddingTop
+        val defaultPaddingBottom = itemView.paddingBottom
 
         init {
             itemView.tag = this

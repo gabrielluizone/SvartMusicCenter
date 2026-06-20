@@ -6,7 +6,8 @@ import com.matejdro.wearmusiccenter.proto.CustomList
 data class CustomListWithBitmaps(
         val listTimestamp: Long,
         val listId: String,
-        val items: List<CustomListItemWithIcon>
+        val items: List<CustomListItemWithIcon>,
+        val activeEntryId: String? = null
 )
 
 data class CustomListItemWithIcon(

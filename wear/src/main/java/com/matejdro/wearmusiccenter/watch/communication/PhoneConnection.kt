@@ -330,7 +330,8 @@ class PhoneConnection @Inject constructor(@ApplicationContext private val contex
                                         CustomListWithBitmaps(
                                                 receivedCustomList.listTimestamp,
                                                 receivedCustomList.listId,
-                                                listItems
+                                                listItems,
+                                                receivedCustomList.activeEntryId.takeIf { it.isNotEmpty() }
                                         )
                                 )
                             }

@@ -69,6 +69,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.lang.ref.WeakReference
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -105,7 +106,9 @@ class MainActivity : WearCompanionWatchActivity(),
     private var dimAlbumArt: Boolean = false
     private var lastKnownDurationMs: Long = 0L
     private var latestAlbumArt: Bitmap? = null
-    private var currentAccentColor: Int = 0
+    // Read by ActionsMenuFragment to highlight the currently-playing queue row in the same color.
+    var currentAccentColor: Int = 0
+        private set
     private var shuffleEnabled: Boolean = false
     private var repeatMode: Int = 0
     private var liked: Boolean = false
@@ -182,10 +185,29 @@ class MainActivity : WearCompanionWatchActivity(),
         })
         binding.centerTapZone.setOnTouchListener { _, event -> centerTapGestureDetector.onTouchEvent(event) }
 
-        binding.overlayBlurImage.setOnClickListener {
-            if (isQuickActionsPanelShowing()) {
-                hideOverlay()
+        // Tapping outside the panel, or swiping down on it, both dismiss it - the system back
+        // gesture (left-edge swipe) closes the whole app instead of just this overlay on some
+        // Wear OS builds, so a swipe-down is offered as a reliable alternative.
+        val overlayDismissGestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent): Boolean = true
+
+            override fun onSingleTapUp(e: MotionEvent): Boolean {
+                if (isQuickActionsPanelShowing()) {
+                    hideOverlay()
+                }
+                return true
             }
+
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                if (isQuickActionsPanelShowing() && velocityY > 400f && velocityY > abs(velocityX)) {
+                    hideOverlay()
+                    return true
+                }
+                return false
+            }
+        })
+        binding.overlayBlurImage.setOnTouchListener { _, event ->
+            overlayDismissGestureDetector.onTouchEvent(event)
         }
 
         binding.quickActionLike.setOnTouchListener(quickActionPressFeedback)

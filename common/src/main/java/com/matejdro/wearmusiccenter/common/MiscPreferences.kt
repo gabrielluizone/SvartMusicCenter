@@ -15,7 +15,9 @@ object MiscPreferences {
 
     val ROTATING_CROWN_OFF_PERIOD: PreferenceDefinition<Int> = SimplePreferenceDefinition("rotating_crown_off_period", 300)
 
-    val ROTATING_CROWN_SENSITIVITY: PreferenceDefinition<Int> = SimplePreferenceDefinition("rotating_crown_sensitivity", 100)
+    // Default kept gentle on purpose - at 100% a single accidental nudge of the crown (e.g.
+    // while taking a screenshot) changes volume by a full volumeStep, which is too noticeable.
+    val ROTATING_CROWN_SENSITIVITY: PreferenceDefinition<Int> = SimplePreferenceDefinition("rotating_crown_sensitivity", 40)
 
     val HAPTIC_FEEDBACK: PreferenceDefinition<Boolean> = SimplePreferenceDefinition("haptic_feedback", true)
 

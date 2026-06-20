@@ -60,11 +60,20 @@ class OpenPlaylistAction : SelectableAction {
                 )
             }
 
-            val protoData = CustomList.newBuilder()
+            val protoDataBuilder = CustomList.newBuilder()
                     .addAllActions(protoList)
                     .setListId(listId)
                     .setListTimestamp(System.currentTimeMillis())
-                    .build()
+
+            val activeQueueItemId = service.currentMediaController?.playbackState?.activeQueueItemId
+            if (listId == CustomLists.PLAYLIST &&
+                    activeQueueItemId != null &&
+                    activeQueueItemId != android.media.session.MediaSession.QueueItem.UNKNOWN_ID.toLong()
+            ) {
+                protoDataBuilder.activeEntryId = activeQueueItemId.toString()
+            }
+
+            val protoData = protoDataBuilder.build()
 
             putDataRequest.data = protoData.toByteArray()
 

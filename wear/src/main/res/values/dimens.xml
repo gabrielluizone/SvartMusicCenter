@@ -10,7 +10,7 @@
 
     <dimen name="notification_margin">6dp</dimen>
 
-    <dimen name="quick_action_button_width">58dp</dimen>
-    <dimen name="quick_action_button_height">50dp</dimen>
+    <dimen name="quick_action_button_width">50dp</dimen>
+    <dimen name="quick_action_button_height">44dp</dimen>
     <dimen name="quick_action_icon_size">26dp</dimen>
 </resources>
