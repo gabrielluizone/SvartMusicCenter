@@ -35,9 +35,6 @@ android {
         freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
         freeCompilerArgs += "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
     }
-    lintOptions {
-        disable 'ExpiredTargetSdkVersion'
-    }
 }
 
 kotlin {
