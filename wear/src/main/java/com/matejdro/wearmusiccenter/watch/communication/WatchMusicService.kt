@@ -6,9 +6,11 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.lifecycleScope
@@ -93,7 +95,14 @@ class WatchMusicService : LifecycleService() {
 
         ongoingActivity.apply(this)
 
-        startForeground(NOTIFICATION_ID_PERSISTENT, notificationBuilder.build())
+        // ServiceCompat passes the FGS type on API 29+ (required on API 34+) and is a no-op
+        // arg on older versions, so this stays correct across the minSdk 25..34 range.
+        ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID_PERSISTENT,
+                notificationBuilder.build(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+        )
     }
 
     private fun removeWearNotification() {
