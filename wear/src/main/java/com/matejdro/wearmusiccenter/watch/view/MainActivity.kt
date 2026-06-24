@@ -1,10 +1,12 @@
 package com.matejdro.wearmusiccenter.watch.view
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.RenderEffect
@@ -81,6 +83,7 @@ class MainActivity : WearCompanionWatchActivity(),
         private const val MESSAGE_HIDE_VOLUME = 10
         private const val MESSAGE_UPDATE_CLOCK = 11
         private const val MESSAGE_DISMISS_NOTIFICATION = 12
+        private const val REQUEST_CODE_POST_NOTIFICATIONS = 1001
 
         private const val VOLUME_BAR_TIMEOUT = 1000L
         private const val ROTARY_DEADZONE = 6f
@@ -256,6 +259,8 @@ class MainActivity : WearCompanionWatchActivity(),
         lifecycle.addObserver(ambientObserver)
         vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
+        maybeRequestNotificationPermission()
+
         viewModel.albumArt.observe(this, albumArtObserver)
         viewModel.currentButtonConfig.observe(this, buttonConfigObserver)
         viewModel.preferences.observe(this, preferencesChangeObserver)
@@ -278,6 +283,20 @@ class MainActivity : WearCompanionWatchActivity(),
         // Registered after backButtonOverrideCallback so it takes priority while enabled - the
         // back gesture should close the quick-actions panel instead of exiting the app.
         onBackPressedDispatcher.addCallback(this, quickActionsPanelBackCallback)
+    }
+
+    private fun maybeRequestNotificationPermission() {
+        // targetSdk 33+ (Android 13) gates notifications behind POST_NOTIFICATIONS. The foreground
+        // WatchMusicService posts an OngoingActivity notification, so request it once to preserve
+        // the pre-33 behavior of that notification simply showing. If the user denies it, the
+        // service still runs - only the notification is suppressed, same as a manual denial.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    REQUEST_CODE_POST_NOTIFICATIONS
+            )
+        }
     }
 
     override fun onStart() {

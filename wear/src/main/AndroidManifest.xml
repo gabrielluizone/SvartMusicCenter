@@ -13,6 +13,10 @@
          the phone connection alive while music plays / the UI is open and shows a transport
          OngoingActivity, so mediaPlayback is the closest-fitting type. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- targetSdk 33+ (Android 13): notifications, including the foreground service's
+         OngoingActivity, require this permission. Requested once at runtime in MainActivity so
+         the notification keeps showing as it did pre-33. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".watch.WearMusicCenter"
