@@ -36,7 +36,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.palette.graphics.Palette
 import androidx.preference.PreferenceManager
-import androidx.wear.ambient.AmbientModeSupport
+import androidx.wear.ambient.AmbientLifecycleObserver
 import androidx.wear.widget.drawer.WearableDrawerLayout
 import androidx.wear.widget.drawer.WearableDrawerView
 import com.google.android.gms.common.GoogleApiAvailability
@@ -75,8 +75,7 @@ import kotlin.random.Random
 
 @AndroidEntryPoint
 class MainActivity : WearCompanionWatchActivity(),
-        FourWayTouchLayout.UserActionListener,
-        AmbientModeSupport.AmbientCallbackProvider {
+        FourWayTouchLayout.UserActionListener {
 
     companion object {
         private const val MESSAGE_HIDE_VOLUME = 10
@@ -99,7 +98,7 @@ class MainActivity : WearCompanionWatchActivity(),
     private lateinit var drawerContentContainer: View
     private lateinit var actionsMenuFragment: ActionsMenuFragment
     private lateinit var vibrator: Vibrator
-    private lateinit var ambientController: AmbientModeSupport.AmbientController
+    private lateinit var ambientObserver: AmbientLifecycleObserver
     private lateinit var stemButtonsManager: StemButtonsManager
     private val handler = TimeoutsHandler(WeakReference(this))
 
@@ -253,7 +252,8 @@ class MainActivity : WearCompanionWatchActivity(),
         binding.notificationPopup.clickableFrame.setOnClickListener { onNotificationTapped() }
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
-        ambientController = AmbientModeSupport.attach(this)
+        ambientObserver = AmbientLifecycleObserver(this, ambientCallback)
+        lifecycle.addObserver(ambientObserver)
         vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
         viewModel.albumArt.observe(this, albumArtObserver)
@@ -544,7 +544,7 @@ class MainActivity : WearCompanionWatchActivity(),
                 MiscPreferences.DISABLE_PHYSICAL_DOUBLE_CLICK_IN_AMBIENT
         )
 
-        if (!ambientController.isAmbient) {
+        if (!ambientObserver.isAmbient) {
             val alwaysDisplayClock =
                     Preferences.getBoolean(preferences, MiscPreferences.ALWAYS_SHOW_TIME)
 
@@ -563,7 +563,7 @@ class MainActivity : WearCompanionWatchActivity(),
             MiscPreferences.DIM_ALBUM_ART
         )
 
-        if (!ambientController.isAmbient) {
+        if (!ambientObserver.isAmbient) {
             binding.albumArtScrim.visibility = if (dimAlbumArt) View.VISIBLE else View.INVISIBLE
         }
     }
@@ -727,9 +727,8 @@ class MainActivity : WearCompanionWatchActivity(),
         actionsMenuFragment.refreshMenu(type)
     }
 
-    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback =
-            object : AmbientModeSupport.AmbientCallback() {
-                override fun onEnterAmbient(ambientDetails: Bundle?) {
+    private val ambientCallback = object : AmbientLifecycleObserver.AmbientLifecycleCallback {
+                override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
                     stemButtonsManager.onEnterAmbient()
                     binding.ambientClock.visibility = View.VISIBLE
 
@@ -1223,7 +1222,7 @@ class MainActivity : WearCompanionWatchActivity(),
 
                     activity.updateClock()
 
-                    if (!activity.ambientController.isAmbient &&
+                    if (!activity.ambientObserver.isAmbient &&
                             Preferences.getBoolean(
                                     activity.preferences,
                                     MiscPreferences.ALWAYS_SHOW_TIME
