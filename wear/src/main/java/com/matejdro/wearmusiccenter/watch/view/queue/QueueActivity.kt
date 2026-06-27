@@ -18,6 +18,26 @@ import dagger.hilt.android.AndroidEntryPoint
 class QueueActivity : ComponentActivity() {
     private val viewModel: QueueViewModel by viewModels()
 
+    companion object {
+        /**
+         * While this Compose queue is showing (and for a short grace period after it closes),
+         * MainActivity must not also auto-open the legacy drawer queue for the same customList
+         * data - otherwise the old queue pops up behind/after this one.
+         */
+        @Volatile
+        var suppressLegacyQueueUntil: Long = 0L
+    }
+
+    override fun onResume() {
+        super.onResume()
+        suppressLegacyQueueUntil = Long.MAX_VALUE
+    }
+
+    override fun onPause() {
+        super.onPause()
+        suppressLegacyQueueUntil = System.currentTimeMillis() + 1500
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

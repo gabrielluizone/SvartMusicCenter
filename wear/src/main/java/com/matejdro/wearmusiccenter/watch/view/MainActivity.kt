@@ -661,6 +661,12 @@ class MainActivity : WearCompanionWatchActivity(),
             return@Observer
         }
 
+        // The new Compose QueueActivity owns the queue now; while it's showing (and briefly after
+        // it closes) don't also pop the legacy drawer queue for the same data.
+        if (System.currentTimeMillis() < QueueActivity.suppressLegacyQueueUntil) {
+            return@Observer
+        }
+
         val lastListDisplayed = Preferences.getString(
                 preferences,
                 MiscPreferences.LAST_MENU_DISPLAYED

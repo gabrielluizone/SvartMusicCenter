@@ -20,11 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.matejdro.wearmusiccenter.R
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
@@ -41,6 +44,12 @@ data class QueueItemUi(
 )
 
 private val IDLE_PILL_COLOR = Color(0xFF1C1C1E)
+
+/** The app-wide Google Sans typeface, so the queue matches the rest of the watch UI. */
+private val GoogleSans = FontFamily(
+        Font(R.font.google_sans_regular, FontWeight.Normal),
+        Font(R.font.google_sans_bold, FontWeight.Bold)
+)
 
 /**
  * Playback queue screen. A [ScalingLazyColumn] of glass pills with the now-playing entry
@@ -105,6 +114,7 @@ private fun QueueRow(
             Text(
                     text = item.title,
                     color = titleColor,
+                    fontFamily = GoogleSans,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     maxLines = 1,
@@ -114,6 +124,7 @@ private fun QueueRow(
                 Text(
                         text = item.subtitle,
                         color = subtitleColor,
+                        fontFamily = GoogleSans,
                         fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
