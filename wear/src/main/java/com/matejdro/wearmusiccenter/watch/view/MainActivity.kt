@@ -363,7 +363,7 @@ class MainActivity : WearCompanionWatchActivity(),
             if ((it.data as MusicState).playing) {
                 // Restores the dynamic (palette-extracted) color after a stopped/error message
                 // may have forced it to plain white below.
-                binding.textArtist.setTextColor(currentAccentColor)
+                binding.textArtist.setTextColor(lightenAccentForText(currentAccentColor))
                 binding.textArtist.text = it.data?.artist
             } else {
                 setStatusMessageOnArtistLine(getString(R.string.playback_stopped))
@@ -426,12 +426,21 @@ class MainActivity : WearCompanionWatchActivity(),
         currentAccentColor = color
         binding.seekBar.progressColor = color
         binding.volumeBar.progressColor = color
-        binding.textArtist.setTextColor(color)
+        // Artist name uses the same dark-theme-adapted (lightened) accent as the queue's now-playing row.
+        binding.textArtist.setTextColor(lightenAccentForText(color))
 
         if (isQuickActionsPanelShowing()) {
             binding.quickActionPanelArtist.setTextColor(color)
             updateQuickActionButtonStates()
         }
+    }
+
+    /** Raises [color]'s lightness so it reads as a soft accent on the dark now-playing screen. */
+    private fun lightenAccentForText(color: Int): Int {
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(color, hsl)
+        hsl[2] = hsl[2].coerceAtLeast(0.62f)
+        return ColorUtils.HSLToColor(hsl)
     }
 
     /**

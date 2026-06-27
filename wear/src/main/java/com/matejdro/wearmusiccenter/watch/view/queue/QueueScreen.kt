@@ -97,8 +97,10 @@ fun QueueScreen(
         onDismiss: () -> Unit
 ) {
     SwipeToDismissBox(onDismissed = onDismiss) { isBackground ->
-        Box(Modifier.fillMaxSize().background(Color.Black)) {
-            if (!isBackground) {
+        // Only the foreground gets an opaque black backdrop; the swipe "background" stays empty so
+        // the translucent window reveals the player underneath while swiping back (one clean close).
+        if (!isBackground) {
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
                 QueueList(items, accentColor, nowPlayingTitle, nowPlayingArtist, onItemClick)
             }
         }
@@ -250,20 +252,21 @@ private fun BoxScope.CurvedScrollIndicator(listState: ScalingLazyListState) {
     )
     if (alpha <= 0.01f) return
 
-    val visible = listState.layoutInfo.visibleItemsInfo.size.coerceAtLeast(1)
-    val thumbFraction = (visible.toFloat() / total).coerceIn(0.12f, 1f)
     val scrollFraction = (listState.centerItemIndex.toFloat() / (total - 1)).coerceIn(0f, 1f)
 
-    val arcSpan = 70f
+    // Short track with a small FIXED-size thumb. (Sizing the thumb by visible-item count made it
+    // jump/resize oddly when scrolling with the rotary crown, so it's a constant length now.)
+    val arcSpan = 44f
+    val thumbSweep = 11f
     Canvas(Modifier.fillMaxSize()) {
-        val stroke = 4.dp.toPx()
-        val inset = stroke / 2f + 3.dp.toPx()
+        val stroke = 3.dp.toPx()
+        val inset = stroke / 2f + 4.dp.toPx()
         val side = size.minDimension - inset * 2f
         val arcSize = Size(side, side)
         val topLeft = Offset((size.width - side) / 2f, (size.height - side) / 2f)
 
         drawArc(
-                color = Color.White.copy(alpha = 0.15f * alpha),
+                color = Color.White.copy(alpha = 0.12f * alpha),
                 startAngle = -arcSpan / 2f,
                 sweepAngle = arcSpan,
                 useCenter = false,
@@ -272,10 +275,9 @@ private fun BoxScope.CurvedScrollIndicator(listState: ScalingLazyListState) {
                 style = Stroke(width = stroke, cap = StrokeCap.Round)
         )
 
-        val thumbSweep = arcSpan * thumbFraction
         val thumbStart = -arcSpan / 2f + (arcSpan - thumbSweep) * scrollFraction
         drawArc(
-                color = Color.White.copy(alpha = 0.75f * alpha),
+                color = Color.White.copy(alpha = 0.8f * alpha),
                 startAngle = thumbStart,
                 sweepAngle = thumbSweep,
                 useCenter = false,
