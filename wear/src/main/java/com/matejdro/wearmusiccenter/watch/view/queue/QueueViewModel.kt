@@ -15,6 +15,9 @@ import javax.inject.Inject
 /** Fallback accent (olive) used until the album art produces one. */
 const val DEFAULT_QUEUE_ACCENT: Int = 0xFFB7C46A.toInt()
 
+/** Now-playing track shown in the queue header. */
+data class NowPlaying(val title: String, val artist: String)
+
 /**
  * Drives [QueueActivity]. Reads the playback queue + now-playing entry from [PhoneConnection]
  * (which the phone fills after [requestQueue]) and forwards a tap back as a selection. Observing
@@ -43,6 +46,13 @@ class QueueViewModel @Inject constructor(
                         isPlaying = item.listItem.entryId == list.activeEntryId
                 )
             } ?: emptyList()
+        }
+    }
+
+    val nowPlaying = MediatorLiveData<NowPlaying?>().apply {
+        addSource(phoneConnection.musicState) { resource ->
+            val state = resource?.data
+            value = if (state != null) NowPlaying(state.title, state.artist) else null
         }
     }
 

@@ -110,6 +110,7 @@
         <activity
             android:name=".watch.view.queue.QueueActivity"
             android:exported="false"
+            android:theme="@style/QueueTheme"
             android:launchMode="singleTop"
             android:taskAffinity=""
             android:excludeFromRecents="true"

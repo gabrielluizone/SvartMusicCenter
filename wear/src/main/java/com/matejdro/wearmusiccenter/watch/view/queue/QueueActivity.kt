@@ -46,10 +46,13 @@ class QueueActivity : ComponentActivity() {
         setContent {
             val items by viewModel.items.observeAsState(emptyList())
             val accent by viewModel.accentColor.observeAsState(DEFAULT_QUEUE_ACCENT)
+            val nowPlaying by viewModel.nowPlaying.observeAsState()
 
             QueueScreen(
                     items = items,
                     accentColor = Color(accent),
+                    nowPlayingTitle = nowPlaying?.title,
+                    nowPlayingArtist = nowPlaying?.artist,
                     onItemClick = { entryId ->
                         viewModel.selectItem(entryId)
                         finish()

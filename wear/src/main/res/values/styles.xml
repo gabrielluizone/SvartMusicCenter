@@ -9,4 +9,14 @@
         <item name="android:fontFamily">@font/google_sans</item>
         <item name="fontFamily">@font/google_sans</item>
     </style>
+
+    <!-- QueueActivity is a Compose screen: black window background (no gray launch flash), no
+         window animation (the SwipeToDismissBox animates the close itself - a window animation on
+         top of it looked like the screen closing twice), and no system swipe-to-dismiss (Compose
+         handles the swipe, so the system one must not also fire). -->
+    <style name="QueueTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowSwipeToDismiss">false</item>
+    </style>
 </resources>
