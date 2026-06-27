@@ -1,5 +1,54 @@
 # Changelog
 
+## 1.12 (in progress)
+
+Wear OS modernization initiative — bringing the watch app up to current
+platform standards (foundation, system integration, native surfaces) and
+starting the move to Jetpack Compose. Full roadmap in
+`docs/wear-modernization-plan.md`.
+
+### Phase 0 — Foundation (wear)
+
+- Target SDK bumped 30 → 34, with the platform changes that become enforced
+  at that target handled so behavior is unchanged on current devices:
+  explicit `android:exported` on the launcher activity + Data Layer listener
+  services (Android 12), and a `mediaPlayback` `foregroundServiceType` +
+  permission on `WatchMusicService` (Android 14).
+- Re-enabled the `ExpiredTargetSdkVersion` lint (its suppression is now
+  obsolete).
+- Migrated the deprecated `AmbientModeSupport` to `AmbientLifecycleObserver`.
+- Removed the dead legacy `support.wearable` `ConfirmationActivity` manifest
+  entry (the androidx one was already in use).
+- Declares + requests `POST_NOTIFICATIONS` (Android 13) so the foreground
+  notification keeps showing.
+
+### Phase 1 — System media integration (wear)
+
+- New watch-side **MediaSession proxy** (`WatchMediaSession`): mirrors the
+  phone's now-playing state (title/artist/art/position/playback + remote
+  volume) and forwards transport controls back to the phone. The phone's
+  playback now appears in and is controllable from the system **Media
+  Controls** app and the Wear OS media surfaces — no app UI rewrite required.
+- New watch→phone skip-next / skip-previous command channel (previously only
+  toggle/seek/volume/quick-action existed).
+- `WatchMusicService`'s foreground notification is now a MediaStyle
+  notification bound to the session.
+
+### Performance (wear)
+
+- Cut control latency: every watch→phone command was re-resolving the phone
+  node via a `getConnectedNodes()` round-trip on each press. The node id is
+  now cached and reused, so button presses reach the phone noticeably faster.
+
+### Queue redesign — in progress (wear)
+
+- Introduced **Jetpack Compose for Wear OS** into the module (first Compose
+  here; pilot for the broader UI modernization).
+- New `QueueScreen` Compose UI: a `ScalingLazyColumn` of glass pills with the
+  now-playing entry highlighted, wrapped in `SwipeToDismissBox` so a
+  side-swipe closes only the queue instead of exiting the app. Hosting and
+  live data wiring still to come.
+
 ## 1.11
 
 Dark "glass/acrylic" redesign of the watch UI, plus new playback features.
