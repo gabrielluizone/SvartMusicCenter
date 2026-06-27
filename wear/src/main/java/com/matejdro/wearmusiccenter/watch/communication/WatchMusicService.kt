@@ -6,9 +6,12 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
+import androidx.media.app.NotificationCompat as MediaNotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.lifecycleScope
@@ -38,8 +41,21 @@ class WatchMusicService : LifecycleService() {
 
     private var serviceTimeoutJob: Job? = null
 
+    private lateinit var mediaSession: WatchMediaSession
+
     override fun onCreate() {
         super.onCreate()
+
+        // Proxy MediaSession so the phone's playback shows up in the system Media Controls app and
+        // the Wear OS media surfaces. State is pushed from PhoneConnection; controls forward back.
+        // Created before the first notification so createWearNotification() can reference its token.
+        mediaSession = WatchMediaSession(this, phoneConnection, lifecycleScope)
+        phoneConnection.musicState.observe(this) { resource ->
+            mediaSession.update(resource?.data, phoneConnection.albumArt.value)
+        }
+        phoneConnection.albumArt.observe(this) { albumArt ->
+            mediaSession.update(phoneConnection.musicState.value?.data, albumArt)
+        }
 
         createWearNotification()
 
@@ -68,6 +84,13 @@ class WatchMusicService : LifecycleService() {
         }
     }
 
+    override fun onDestroy() {
+        if (::mediaSession.isInitialized) {
+            mediaSession.release()
+        }
+        super.onDestroy()
+    }
+
     private fun createWearNotification() {
         val openAppIntent = Intent(this, MainActivity::class.java)
 
@@ -83,6 +106,9 @@ class WatchMusicService : LifecycleService() {
                 .setContentIntent(openAppPendingIntent)
                 .setSmallIcon(commonR.drawable.ic_notification_white)
                 .setOngoing(true)
+                // Tag as a media notification bound to the proxy session so the Wear OS media
+                // template/surfaces derive their transport controls from the session state.
+                .setStyle(MediaNotificationCompat.MediaStyle().setMediaSession(mediaSession.sessionToken))
 
 
         val ongoingActivity = OngoingActivity.Builder(this, NOTIFICATION_ID_PERSISTENT, notificationBuilder)
@@ -93,7 +119,14 @@ class WatchMusicService : LifecycleService() {
 
         ongoingActivity.apply(this)
 
-        startForeground(NOTIFICATION_ID_PERSISTENT, notificationBuilder.build())
+        // ServiceCompat passes the FGS type on API 29+ (required on API 34+) and is a no-op
+        // arg on older versions, so this stays correct across the minSdk 25..34 range.
+        ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID_PERSISTENT,
+                notificationBuilder.build(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+        )
     }
 
     private fun removeWearNotification() {

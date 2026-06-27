@@ -9,4 +9,18 @@
         <item name="android:fontFamily">@font/google_sans</item>
         <item name="fontFamily">@font/google_sans</item>
     </style>
+
+    <!-- QueueActivity is a Compose screen: black window background (no gray launch flash), no
+         window animation (the SwipeToDismissBox animates the close itself - a window animation on
+         top of it looked like the screen closing twice), and no system swipe-to-dismiss (Compose
+         handles the swipe, so the system one must not also fire). -->
+    <style name="QueueTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <!-- Translucent so the SwipeToDismissBox reveals the player behind while swiping back (the
+             queue runs in MainActivity's task now); no window animation and no system
+             swipe-to-dismiss, so closing happens exactly once via the Compose swipe. -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowSwipeToDismiss">false</item>
+    </style>
 </resources>

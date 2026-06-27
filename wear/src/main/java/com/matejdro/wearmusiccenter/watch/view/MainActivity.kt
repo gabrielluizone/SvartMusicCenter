@@ -1,10 +1,12 @@
 package com.matejdro.wearmusiccenter.watch.view
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.RenderEffect
@@ -36,7 +38,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.palette.graphics.Palette
 import androidx.preference.PreferenceManager
-import androidx.wear.ambient.AmbientModeSupport
+import androidx.wear.ambient.AmbientLifecycleObserver
 import androidx.wear.widget.drawer.WearableDrawerLayout
 import androidx.wear.widget.drawer.WearableDrawerView
 import com.google.android.gms.common.GoogleApiAvailability
@@ -58,6 +60,7 @@ import com.matejdro.wearmusiccenter.proto.MusicState
 import com.matejdro.wearmusiccenter.watch.communication.CustomListWithBitmaps
 import com.matejdro.wearmusiccenter.watch.communication.WatchInfoSender
 import com.matejdro.wearmusiccenter.watch.communication.WatchMusicService
+import com.matejdro.wearmusiccenter.watch.view.queue.QueueActivity
 import com.matejdro.wearmusiccenter.watch.config.WatchActionConfigProvider
 import com.matejdro.wearmusiccenter.watch.model.Notification
 import com.matejdro.wearutils.companionnotice.WearCompanionWatchActivity
@@ -75,13 +78,13 @@ import kotlin.random.Random
 
 @AndroidEntryPoint
 class MainActivity : WearCompanionWatchActivity(),
-        FourWayTouchLayout.UserActionListener,
-        AmbientModeSupport.AmbientCallbackProvider {
+        FourWayTouchLayout.UserActionListener {
 
     companion object {
         private const val MESSAGE_HIDE_VOLUME = 10
         private const val MESSAGE_UPDATE_CLOCK = 11
         private const val MESSAGE_DISMISS_NOTIFICATION = 12
+        private const val REQUEST_CODE_POST_NOTIFICATIONS = 1001
 
         private const val VOLUME_BAR_TIMEOUT = 1000L
         private const val ROTARY_DEADZONE = 6f
@@ -99,7 +102,7 @@ class MainActivity : WearCompanionWatchActivity(),
     private lateinit var drawerContentContainer: View
     private lateinit var actionsMenuFragment: ActionsMenuFragment
     private lateinit var vibrator: Vibrator
-    private lateinit var ambientController: AmbientModeSupport.AmbientController
+    private lateinit var ambientObserver: AmbientLifecycleObserver
     private lateinit var stemButtonsManager: StemButtonsManager
     private val handler = TimeoutsHandler(WeakReference(this))
 
@@ -230,14 +233,9 @@ class MainActivity : WearCompanionWatchActivity(),
         binding.quickActionUpNext.setOnClickListener {
             buzz()
             hideOverlay()
-            // Same call the working, separately-configured "open queue" button uses - unlike
-            // openDefaultListInDrawer(), this isn't gated behind the swipe-up-specific preference,
-            // so Up Next always opens the real queue regardless of that setting.
-            viewModel.openPlaybackQueue()
-            actionsMenuFragment.refreshMenu(
-                    ActionsMenuFragment.MenuType.Custom(CustomListWithBitmaps(-1, "", emptyList()))
-            )
-            binding.actionDrawer.controller.openDrawer()
+            // Opens the new Compose queue screen (swipe-to-dismiss closes just it). QueueActivity
+            // requests the queue itself, so no need to prime the old drawer list here.
+            startActivity(Intent(this, QueueActivity::class.java))
         }
 
         // Title's floor (22sp) is kept comfortably above artist's ceiling (16sp) so the title
@@ -253,8 +251,11 @@ class MainActivity : WearCompanionWatchActivity(),
         binding.notificationPopup.clickableFrame.setOnClickListener { onNotificationTapped() }
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
-        ambientController = AmbientModeSupport.attach(this)
+        ambientObserver = AmbientLifecycleObserver(this, ambientCallback)
+        lifecycle.addObserver(ambientObserver)
         vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+
+        maybeRequestNotificationPermission()
 
         viewModel.albumArt.observe(this, albumArtObserver)
         viewModel.currentButtonConfig.observe(this, buttonConfigObserver)
@@ -278,6 +279,20 @@ class MainActivity : WearCompanionWatchActivity(),
         // Registered after backButtonOverrideCallback so it takes priority while enabled - the
         // back gesture should close the quick-actions panel instead of exiting the app.
         onBackPressedDispatcher.addCallback(this, quickActionsPanelBackCallback)
+    }
+
+    private fun maybeRequestNotificationPermission() {
+        // targetSdk 33+ (Android 13) gates notifications behind POST_NOTIFICATIONS. The foreground
+        // WatchMusicService posts an OngoingActivity notification, so request it once to preserve
+        // the pre-33 behavior of that notification simply showing. If the user denies it, the
+        // service still runs - only the notification is suppressed, same as a manual denial.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    REQUEST_CODE_POST_NOTIFICATIONS
+            )
+        }
     }
 
     override fun onStart() {
@@ -348,7 +363,7 @@ class MainActivity : WearCompanionWatchActivity(),
             if ((it.data as MusicState).playing) {
                 // Restores the dynamic (palette-extracted) color after a stopped/error message
                 // may have forced it to plain white below.
-                binding.textArtist.setTextColor(currentAccentColor)
+                binding.textArtist.setTextColor(lightenAccentForText(currentAccentColor))
                 binding.textArtist.text = it.data?.artist
             } else {
                 setStatusMessageOnArtistLine(getString(R.string.playback_stopped))
@@ -411,12 +426,21 @@ class MainActivity : WearCompanionWatchActivity(),
         currentAccentColor = color
         binding.seekBar.progressColor = color
         binding.volumeBar.progressColor = color
-        binding.textArtist.setTextColor(color)
+        // Artist name uses the same dark-theme-adapted (lightened) accent as the queue's now-playing row.
+        binding.textArtist.setTextColor(lightenAccentForText(color))
 
         if (isQuickActionsPanelShowing()) {
-            binding.quickActionPanelArtist.setTextColor(color)
+            binding.quickActionPanelArtist.setTextColor(lightenAccentForText(color))
             updateQuickActionButtonStates()
         }
+    }
+
+    /** Raises [color]'s lightness so it reads as a soft accent on the dark now-playing screen. */
+    private fun lightenAccentForText(color: Int): Int {
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(color, hsl)
+        hsl[2] = hsl[2].coerceAtLeast(0.62f)
+        return ColorUtils.HSLToColor(hsl)
     }
 
     /**
@@ -544,7 +568,7 @@ class MainActivity : WearCompanionWatchActivity(),
                 MiscPreferences.DISABLE_PHYSICAL_DOUBLE_CLICK_IN_AMBIENT
         )
 
-        if (!ambientController.isAmbient) {
+        if (!ambientObserver.isAmbient) {
             val alwaysDisplayClock =
                     Preferences.getBoolean(preferences, MiscPreferences.ALWAYS_SHOW_TIME)
 
@@ -563,7 +587,7 @@ class MainActivity : WearCompanionWatchActivity(),
             MiscPreferences.DIM_ALBUM_ART
         )
 
-        if (!ambientController.isAmbient) {
+        if (!ambientObserver.isAmbient) {
             binding.albumArtScrim.visibility = if (dimAlbumArt) View.VISIBLE else View.INVISIBLE
         }
     }
@@ -646,6 +670,18 @@ class MainActivity : WearCompanionWatchActivity(),
             return@Observer
         }
 
+        // The new Compose QueueActivity owns the queue now; while it's showing (and briefly after
+        // it closes) don't also pop the legacy drawer queue for the same data.
+        if (System.currentTimeMillis() < QueueActivity.suppressLegacyQueueUntil) {
+            return@Observer
+        }
+
+        // The playback queue is identified by a now-playing activeEntryId - it is shown only by
+        // QueueActivity, never the legacy drawer. Configured custom lists (no active entry) still use it.
+        if (!it.activeEntryId.isNullOrEmpty()) {
+            return@Observer
+        }
+
         val lastListDisplayed = Preferences.getString(
                 preferences,
                 MiscPreferences.LAST_MENU_DISPLAYED
@@ -710,26 +746,18 @@ class MainActivity : WearCompanionWatchActivity(),
     }
 
     private fun openDefaultListInDrawer() {
-        val type = if (Preferences.getBoolean(
-                        preferences,
-                        MiscPreferences.OPEN_PLAYBACK_QUEUE_ON_SWIPE_UP
-                )
-        ) {
-            viewModel.openPlaybackQueue()
-
-            ActionsMenuFragment.MenuType.Custom(
-                    CustomListWithBitmaps(-1, "", emptyList())
-            )
-        } else {
-            ActionsMenuFragment.MenuType.Actions
+        if (Preferences.getBoolean(preferences, MiscPreferences.OPEN_PLAYBACK_QUEUE_ON_SWIPE_UP)) {
+            // The queue now opens as the Compose QueueActivity (swipe-to-dismiss), not the drawer.
+            binding.actionDrawer.controller.closeDrawer()
+            startActivity(Intent(this, QueueActivity::class.java))
+            return
         }
 
-        actionsMenuFragment.refreshMenu(type)
+        actionsMenuFragment.refreshMenu(ActionsMenuFragment.MenuType.Actions)
     }
 
-    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback =
-            object : AmbientModeSupport.AmbientCallback() {
-                override fun onEnterAmbient(ambientDetails: Bundle?) {
+    private val ambientCallback = object : AmbientLifecycleObserver.AmbientLifecycleCallback {
+                override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
                     stemButtonsManager.onEnterAmbient()
                     binding.ambientClock.visibility = View.VISIBLE
 
@@ -1054,7 +1082,7 @@ class MainActivity : WearCompanionWatchActivity(),
 
         binding.quickActionPanelTitle.text = binding.textTitle.text
         binding.quickActionPanelArtist.text = binding.textArtist.text
-        binding.quickActionPanelArtist.setTextColor(currentAccentColor)
+        binding.quickActionPanelArtist.setTextColor(lightenAccentForText(currentAccentColor))
         binding.quickActionPanelArtist.visibility =
                 if (binding.quickActionPanelArtist.text.isNullOrEmpty()) View.GONE else View.VISIBLE
 
@@ -1223,7 +1251,7 @@ class MainActivity : WearCompanionWatchActivity(),
 
                     activity.updateClock()
 
-                    if (!activity.ambientController.isAmbient &&
+                    if (!activity.ambientObserver.isAmbient &&
                             Preferences.getBoolean(
                                     activity.preferences,
                                     MiscPreferences.ALWAYS_SHOW_TIME

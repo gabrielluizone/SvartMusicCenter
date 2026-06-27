@@ -22,6 +22,22 @@ All communication goes through the Google Play Services **Wearable Data Layer AP
 - Watch side: `PhoneConnection`, `WatchMusicService`, `PreferencesReceiver`, `IdleMessageListener` handle the corresponding receiving/sending logic.
 - Payloads for structured data (action lists, button configs, watch info) are serialized with **protobuf** using the schemas in `common/src/main/proto/`.
 
+### Watch-side data flow
+
+`PhoneConnection` (Hilt `@Singleton`) listens to `DataClient` updates and exposes `LiveData` properties (`musicState`, `rawPlaybackConfig`, `rawStoppedConfig`, `customList`, etc.). The two separate configs — playing vs. stopped — let users assign different button actions depending on whether music is currently playing.
+
+`MusicViewModel` (`@HiltViewModel`) consumes `PhoneConnection` LiveData and drives `MainActivity`. It owns `WatchActionConfigProvider` (one for each config) which decodes protobuf action configs from the phone into `ButtonAction` objects keyed by `ButtonInfo`.
+
+`WatchMusicService` is a foreground `LifecycleService` that stays alive while music is playing or the UI is open, keeping `PhoneConnection` active. It shuts down after an idle timeout when neither condition holds.
+
+### Watch input handling
+
+`MainActivity` handles three input categories:
+
+1. **Screen gestures** — `FourWayTouchLayout` (from `common/`) divides the screen into quadrants; taps in each quadrant are reported as a `ScreenQuadrant` gesture mapped through button config.
+2. **Physical stem buttons** — `StemButtonsManager` (`wear/.../view/StemButtonsManager.kt`) translates raw `KeyEvent` sequences into single-tap, double-tap, or long-press gestures per configured button. Includes an ambient-mode phantom-click workaround.
+3. **Rotary encoder / digital crown** — handled via `RotaryEncoderHelper` directly in `MainActivity`; scroll events are sent as volume change messages to the phone.
+
 ### Actions system (mobile)
 
 Button presses/gestures map to `PhoneAction` subtypes (`mobile/.../actions/`), each with a corresponding `ActionHandler<T>` implementation (playback, volume, app-launch, Tasker, open menu/playlist, etc.). New actions typically need: an action class, a handler, a binding in `di/ActionHandlersModule.kt`, and an entry in the relevant action list (`RootActionList`, `PlaybackActionList`, `VolumeActionList`).

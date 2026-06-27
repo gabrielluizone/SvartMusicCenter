@@ -1,0 +1,81 @@
+package com.matejdro.wearmusiccenter.watch.view.queue
+
+import android.os.Bundle
+import android.view.View
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.graphics.Color
+import dagger.hilt.android.AndroidEntryPoint
+
+/**
+ * Full-screen Compose host for the playback queue. Requests the queue on open, renders
+ * [QueueScreen], plays the tapped entry, and finishes on swipe-to-dismiss (which returns to the
+ * player instead of exiting the app).
+ */
+@AndroidEntryPoint
+class QueueActivity : ComponentActivity() {
+    private val viewModel: QueueViewModel by viewModels()
+    // Guard against finish() being called more than once (Compose dismiss + noHistory + system
+    // swipe can all fire close events; only the first one should take effect).
+    @Volatile private var finishCalled = false
+
+    companion object {
+        /**
+         * While this Compose queue is showing (and for a short grace period after it closes),
+         * MainActivity must not also auto-open the legacy drawer queue for the same customList
+         * data - otherwise the old queue pops up behind/after this one.
+         */
+        @Volatile
+        var suppressLegacyQueueUntil: Long = 0L
+    }
+
+    override fun onResume() {
+        super.onResume()
+        suppressLegacyQueueUntil = Long.MAX_VALUE
+    }
+
+    override fun onPause() {
+        super.onPause()
+        suppressLegacyQueueUntil = System.currentTimeMillis() + 1500
+    }
+
+    private fun safeFinish() {
+        if (!finishCalled) {
+            finishCalled = true
+            // Make the window invisible before calling finish() so there is no flash from
+            // the translucent/empty window being briefly visible while the system transitions
+            // back to MainActivity.
+            window.decorView.visibility = View.INVISIBLE
+            finish()
+            @Suppress("DEPRECATION")
+            overridePendingTransition(0, 0)
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        viewModel.requestQueue()
+
+        setContent {
+            val items by viewModel.items.observeAsState(emptyList())
+            val accent by viewModel.accentColor.observeAsState(DEFAULT_QUEUE_ACCENT)
+            val nowPlaying by viewModel.nowPlaying.observeAsState()
+
+            QueueScreen(
+                    items = items,
+                    accentColor = Color(accent),
+                    nowPlayingTitle = nowPlaying?.title,
+                    nowPlayingArtist = nowPlaying?.artist,
+                    onItemClick = { entryId ->
+                        viewModel.selectItem(entryId)
+                        safeFinish()
+                    },
+                    onDismiss = { safeFinish() }
+            )
+        }
+    }
+}

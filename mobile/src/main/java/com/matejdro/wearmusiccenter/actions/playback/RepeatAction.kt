@@ -36,7 +36,10 @@ class RepeatAction : SelectableAction {
 
             val nextMode = when (compatController.repeatMode) {
                 PlaybackStateCompat.REPEAT_MODE_NONE -> PlaybackStateCompat.REPEAT_MODE_ALL
-                PlaybackStateCompat.REPEAT_MODE_ALL -> PlaybackStateCompat.REPEAT_MODE_ONE
+                // REPEAT_MODE_GROUP is semantically equivalent to ALL (some apps, e.g. Retro Music,
+                // report GROUP instead of ALL — treat them identically so the cycle continues to ONE.
+                PlaybackStateCompat.REPEAT_MODE_ALL,
+                PlaybackStateCompat.REPEAT_MODE_GROUP -> PlaybackStateCompat.REPEAT_MODE_ONE
                 else -> PlaybackStateCompat.REPEAT_MODE_NONE
             }
 

@@ -61,6 +61,11 @@ class LikeAction : SelectableAction {
 
             service.currentMediaController?.transportControls
                     ?.sendCustomAction(likeAction.action, likeAction.extras)
+
+            // Some apps don't immediately re-publish their playback state after toggling the like
+            // (so onPlaybackStateChanged never fires). Schedule a forced re-read so the watch
+            // button shows the correct liked/unliked state within ~500 ms.
+            service.scheduleStateRefresh()
         }
     }
 }

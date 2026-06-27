@@ -75,6 +75,12 @@ class PhoneConnection @Inject constructor(@ApplicationContext private val contex
     private val nodeClient = Wearable.getNodeClient(context)
     private val closeHandler = ConnectionCloseHandler(WeakReference(this))
 
+    // Cached phone node id, refreshed whenever capabilities change (connect/reconnect). Using it
+    // avoids the extra getConnectedNodes() round-trip that sendMessageToNearestClient performs on
+    // every send - that per-press lookup was the main source of control latency.
+    @Volatile
+    private var phoneNodeId: String? = null
+
     private var sendingVolume = false
     private var nextVolume = -1f
 
@@ -136,6 +142,7 @@ class PhoneConnection @Inject constructor(@ApplicationContext private val contex
 
     private fun onWatchConnectionUpdated(capabilityInfo: CapabilityInfo) {
         val firstNode = capabilityInfo.nodes.firstOrNull { it.isNearby }
+        phoneNodeId = firstNode?.id
 
         if (firstNode != null) {
             scope?.launchWithErrorHandling(context, musicState) {
@@ -172,11 +179,7 @@ class PhoneConnection @Inject constructor(@ApplicationContext private val contex
             try {
                 sendingVolume = true
 
-                messageClient.sendMessageToNearestClient(
-                        nodeClient,
-                        CommPaths.MESSAGE_CHANGE_VOLUME,
-                        FloatPacker.packFloat(newVolume)
-                )
+                sendToPhone(CommPaths.MESSAGE_CHANGE_VOLUME, FloatPacker.packFloat(newVolume))
             } finally {
                 sendingVolume = false
                 if (nextVolume >= 0) {
@@ -198,11 +201,7 @@ class PhoneConnection @Inject constructor(@ApplicationContext private val contex
             try {
                 sendingSeek = true
 
-                messageClient.sendMessageToNearestClient(
-                        nodeClient,
-                        CommPaths.MESSAGE_SEEK_TO,
-                        ByteBuffer.allocate(8).putLong(positionMs).array()
-                )
+                sendToPhone(CommPaths.MESSAGE_SEEK_TO, ByteBuffer.allocate(8).putLong(positionMs).array())
             } finally {
                 sendingSeek = false
                 if (nextSeekPositionMs >= 0) {
@@ -212,38 +211,46 @@ class PhoneConnection @Inject constructor(@ApplicationContext private val contex
         }
     }
 
+    /**
+     * Sends a message to the phone, preferring the cached [phoneNodeId] to skip the per-call
+     * node-resolution round-trip. Falls back to nearest-client resolution if the cache is empty.
+     */
+    private suspend fun sendToPhone(path: String, data: ByteArray? = null) {
+        val node = phoneNodeId
+        if (node != null) {
+            messageClient.sendMessage(node, path, data).await()
+        } else {
+            messageClient.sendMessageToNearestClient(nodeClient, path, data)
+        }
+    }
+
     suspend fun togglePlayPause() {
-        messageClient.sendMessageToNearestClient(nodeClient, CommPaths.MESSAGE_TOGGLE_PLAY_PAUSE)
+        sendToPhone(CommPaths.MESSAGE_TOGGLE_PLAY_PAUSE)
+    }
+
+    suspend fun sendSkipNext() {
+        sendToPhone(CommPaths.MESSAGE_SKIP_NEXT)
+    }
+
+    suspend fun sendSkipPrevious() {
+        sendToPhone(CommPaths.MESSAGE_SKIP_PREVIOUS)
     }
 
     /** [name] is one of "like"/"shuffle"/"repeat" - see MusicService.onMessageReceived on the phone. */
     suspend fun sendQuickAction(name: String) {
-        messageClient.sendMessageToNearestClient(
-                nodeClient,
-                CommPaths.MESSAGE_QUICK_ACTION,
-                name.toByteArray(Charsets.UTF_8)
-        )
+        sendToPhone(CommPaths.MESSAGE_QUICK_ACTION, name.toByteArray(Charsets.UTF_8))
     }
 
     suspend fun executeButtonAction(buttonInfo: ButtonInfo) {
-        messageClient.sendMessageToNearestClient(
-                nodeClient,
-                CommPaths.MESSAGE_EXECUTE_ACTION,
-                buttonInfo.buildProtoVersion().build().toByteArray()
-        )
+        sendToPhone(CommPaths.MESSAGE_EXECUTE_ACTION, buttonInfo.buildProtoVersion().build().toByteArray())
     }
 
     suspend fun executeMenuAction(index: Int) {
-        messageClient.sendMessageToNearestClient(
-                nodeClient,
-                CommPaths.MESSAGE_EXECUTE_MENU_ACTION,
-                ByteBuffer.allocate(4).putInt(index).array()
-        )
+        sendToPhone(CommPaths.MESSAGE_EXECUTE_MENU_ACTION, ByteBuffer.allocate(4).putInt(index).array())
     }
 
     suspend fun executeCustomMenuAction(listId: String, entryId: String) {
-        messageClient.sendMessageToNearestClient(
-                nodeClient,
+        sendToPhone(
                 CommPaths.MESSAGE_CUSTOM_LIST_ITEM_SELECTED,
                 CustomListItemAction.newBuilder()
                         .setListId(listId)

@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: "kotlin-kapt"
 apply plugin: "dagger.hilt.android.plugin"
 apply plugin: 'de.mobilej.unmock'
@@ -10,9 +11,9 @@ android {
         namespace = "com.matejdro.wearmusiccenter"
         compileSdk 36
         minSdkVersion 25
-        targetSdkVersion 30
-        versionCode 132
-        versionName "1.11"
+        targetSdkVersion 34
+        versionCode 133
+        versionName "1.12"
     }
     buildTypes {
         release {
@@ -23,6 +24,7 @@ android {
     }
     buildFeatures {
         viewBinding true
+        compose true
     }
 
     compileOptions {
@@ -34,9 +36,6 @@ android {
     kotlinOptions {
         freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
         freeCompilerArgs += "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
-    }
-    lintOptions {
-        disable 'ExpiredTargetSdkVersion'
     }
 }
 
@@ -85,6 +84,17 @@ dependencies {
     implementation libs.androidx.core
     implementation libs.androidx.wear
     implementation libs.androidx.wear.ongoing
+    implementation libs.androidx.media
+
+    // Jetpack Compose for Wear OS (first Compose in this module - pilots the redesign).
+    implementation platform(libs.androidx.compose.bom)
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.ui.toolingPreview
+    debugImplementation libs.androidx.compose.ui.tooling
+    implementation libs.androidx.wear.compose.material3
+    implementation libs.androidx.wear.compose.foundation
+    implementation libs.androidx.activity.compose
+    implementation libs.androidx.compose.runtime.livedata
     implementation libs.androidx.fragment
     implementation libs.androidx.palette
     implementation libs.androidx.activity
