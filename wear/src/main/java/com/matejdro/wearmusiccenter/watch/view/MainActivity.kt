@@ -430,7 +430,7 @@ class MainActivity : WearCompanionWatchActivity(),
         binding.textArtist.setTextColor(lightenAccentForText(color))
 
         if (isQuickActionsPanelShowing()) {
-            binding.quickActionPanelArtist.setTextColor(color)
+            binding.quickActionPanelArtist.setTextColor(lightenAccentForText(color))
             updateQuickActionButtonStates()
         }
     }
@@ -1082,7 +1082,7 @@ class MainActivity : WearCompanionWatchActivity(),
 
         binding.quickActionPanelTitle.text = binding.textTitle.text
         binding.quickActionPanelArtist.text = binding.textArtist.text
-        binding.quickActionPanelArtist.setTextColor(currentAccentColor)
+        binding.quickActionPanelArtist.setTextColor(lightenAccentForText(currentAccentColor))
         binding.quickActionPanelArtist.visibility =
                 if (binding.quickActionPanelArtist.text.isNullOrEmpty()) View.GONE else View.VISIBLE
 

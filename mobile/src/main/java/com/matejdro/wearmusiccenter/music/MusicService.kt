@@ -12,6 +12,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.database.ContentObserver
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.PlaybackState
@@ -359,6 +360,15 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
 
                 albumArt = meta.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
                     ?: meta.getBitmap(MediaMetadata.METADATA_KEY_ART)
+                    ?: meta.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
+                    // Many apps on Android 10+ provide art as a content:// URI instead of a raw
+                    // Bitmap to reduce memory pressure. The system notification resolver handles
+                    // these automatically; we need an explicit fallback to match.
+                    ?: loadBitmapFromUri(
+                        meta.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
+                            ?: meta.getString(MediaMetadata.METADATA_KEY_ART_URI)
+                            ?: meta.getString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI)
+                    )
 
                 val duration = meta.getLong(MediaMetadata.METADATA_KEY_DURATION)
                 if (duration > 0) {
@@ -388,8 +398,12 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
                     this,
                     MediaSessionCompat.Token.fromToken(mediaController.sessionToken)
             )
+            // Only treat shuffle as ON when explicitly set to ALL or GROUP.
+            // SHUFFLE_MODE_INVALID (-1) is returned by apps that never set shuffle mode, and
+            // (-1 != NONE) would have made the button always appear selected. :contentReference[oaicite:0]{index=0}
             musicStateBuilder.shuffleEnabled =
-                    compatController.shuffleMode != PlaybackStateCompat.SHUFFLE_MODE_NONE
+                    compatController.shuffleMode == PlaybackStateCompat.SHUFFLE_MODE_ALL ||
+                    compatController.shuffleMode == PlaybackStateCompat.SHUFFLE_MODE_GROUP
             musicStateBuilder.repeatMode = when (compatController.repeatMode) {
                 PlaybackStateCompat.REPEAT_MODE_ALL, PlaybackStateCompat.REPEAT_MODE_GROUP -> 1
                 PlaybackStateCompat.REPEAT_MODE_ONE -> 2
@@ -502,6 +516,36 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
         if (currentMediaController?.isPlaying() == true) {
             currentMediaController?.transportControls?.pause()
         }
+    }
+
+    /**
+     * Loads a [Bitmap] from a local content:// URI. Skips http/https URIs to avoid blocking the
+     * main thread on network I/O. Returns null on any error.
+     */
+    private fun loadBitmapFromUri(uriString: String?): Bitmap? {
+        if (uriString.isNullOrEmpty()) return null
+        val uri = Uri.parse(uriString)
+        if (uri.scheme == "http" || uri.scheme == "https") return null
+        return try {
+            contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+        } catch (e: Exception) {
+            Timber.w(e, "Could not load album art from URI: %s", uriString)
+            null
+        }
+    }
+
+    /**
+     * Schedules a forced re-read and retransmit of the current music state after [delayMs].
+     *
+     * Some apps (e.g. those that toggle a "like" favorite) don't immediately call
+     * [android.media.session.MediaSession.setPlaybackState] after updating their internal state,
+     * so [onPlaybackStateChanged] never fires. Calling this after executing such an action ensures
+     * the watch button reflects the new state within half a second.
+     */
+    fun scheduleStateRefresh(delayMs: Long = 500L) {
+        Handler(Looper.getMainLooper()).postDelayed({
+            buildMusicStateAndTransmit(currentMediaController)
+        }, delayMs)
     }
 
     private fun onCustomMenuItemPresed(customListItemAction: CustomListItemAction) {

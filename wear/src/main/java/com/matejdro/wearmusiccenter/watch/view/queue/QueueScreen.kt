@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -48,6 +49,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.foundation.AnchorType
+import androidx.wear.compose.foundation.CurvedLayout
+import androidx.wear.compose.foundation.CurvedTextStyle
+import androidx.wear.compose.foundation.basicCurvedText
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.items
@@ -96,7 +101,12 @@ fun QueueScreen(
         onItemClick: (entryId: String) -> Unit,
         onDismiss: () -> Unit
 ) {
-    SwipeToDismissBox(onDismissed = onDismiss) { isBackground ->
+    // Guard: SwipeToDismissBox can fire onDismissed more than once in edge cases (e.g. the system
+    // windowSwipeToDismiss racing with the Compose gesture). Only forward the first call.
+    var dismissed by remember { mutableStateOf(false) }
+    SwipeToDismissBox(onDismissed = {
+        if (!dismissed) { dismissed = true; onDismiss() }
+    }) { isBackground ->
         // Only the foreground gets an opaque black backdrop; the swipe "background" stays empty so
         // the translucent window reveals the player underneath while swiping back (one clean close).
         if (!isBackground) {
@@ -127,12 +137,39 @@ private fun QueueList(
         ScalingLazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 state = listState,
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 26.dp),
+                // Extra top padding leaves room for the curved clock at the top bezel.
+                contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 36.dp, bottom = 26.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            item { QueueHeader(time, nowPlayingTitle, nowPlayingArtist) }
+            item { QueueHeader(nowPlayingTitle, nowPlayingArtist) }
             items(items, key = { it.entryId }) { item ->
                 QueueRow(item, accentColor, onItemClick)
+            }
+        }
+
+        // Clock curved along the top bezel. Fades out as the user scrolls down (centerItemIndex > 0
+        // means the header is no longer the center item) so it doesn't overlap the list content.
+        val showClock = listState.centerItemIndex == 0
+        val clockAlpha by animateFloatAsState(
+                targetValue = if (showClock) 1f else 0f,
+                animationSpec = tween(durationMillis = 200),
+                label = "clockAlpha"
+        )
+        if (clockAlpha > 0.01f) {
+            CurvedLayout(
+                    modifier = Modifier.alpha(clockAlpha),
+                    anchor = 270f,
+                    anchorType = AnchorType.Center
+            ) {
+                basicCurvedText(
+                        text = time,
+                        style = CurvedTextStyle(
+                                fontSize = 16.sp,
+                                color = Color.White.copy(alpha = 0.75f),
+                                fontFamily = GoogleSans,
+                                fontWeight = FontWeight.Normal
+                        )
+                )
             }
         }
 
@@ -141,17 +178,11 @@ private fun QueueList(
 }
 
 @Composable
-private fun QueueHeader(time: String, title: String?, artist: String?) {
+private fun QueueHeader(title: String?, artist: String?) {
     Column(
             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-                text = time,
-                color = Color.White.copy(alpha = 0.7f),
-                fontFamily = GoogleSans,
-                fontSize = 14.sp
-        )
         if (!title.isNullOrBlank()) {
             Text(
                     text = title,
@@ -256,11 +287,13 @@ private fun BoxScope.CurvedScrollIndicator(listState: ScalingLazyListState) {
 
     // Short track with a small FIXED-size thumb. (Sizing the thumb by visible-item count made it
     // jump/resize oddly when scrolling with the rotary crown, so it's a constant length now.)
-    val arcSpan = 44f
-    val thumbSweep = 11f
+    // Stroke 5.5 dp matches the Wear OS standard indicator weight; arcSpan 22° is compact enough
+    // that the bar doesn't feel stretched vertically on the bezel.
+    val arcSpan = 22f
+    val thumbSweep = 5.5f
     Canvas(Modifier.fillMaxSize()) {
-        val stroke = 3.dp.toPx()
-        val inset = stroke / 2f + 4.dp.toPx()
+        val stroke = 4.dp.toPx()
+        val inset = stroke / 2f + 2.dp.toPx()
         val side = size.minDimension - inset * 2f
         val arcSize = Size(side, side)
         val topLeft = Offset((size.width - side) / 2f, (size.height - side) / 2f)

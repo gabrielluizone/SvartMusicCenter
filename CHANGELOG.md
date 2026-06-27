@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.12 (in progress)
+## 1.12
 
 Wear OS modernization initiative — bringing the watch app up to current
 platform standards (foundation, system integration, native surfaces) and
@@ -29,6 +29,8 @@ starting the move to Jetpack Compose. Full roadmap in
   volume) and forwards transport controls back to the phone. The phone's
   playback now appears in and is controllable from the system **Media
   Controls** app and the Wear OS media surfaces — no app UI rewrite required.
+- MediaSession flags and `setSessionActivity` now set so the Wear OS recents
+  screen shows the currently playing track name under the app name.
 - New watch→phone skip-next / skip-previous command channel (previously only
   toggle/seek/volume/quick-action existed).
 - `WatchMusicService`'s foreground notification is now a MediaStyle
@@ -40,14 +42,47 @@ starting the move to Jetpack Compose. Full roadmap in
   node via a `getConnectedNodes()` round-trip on each press. The node id is
   now cached and reused, so button presses reach the phone noticeably faster.
 
-### Queue redesign — in progress (wear)
+### Queue redesign (wear)
 
 - Introduced **Jetpack Compose for Wear OS** into the module (first Compose
   here; pilot for the broader UI modernization).
-- New `QueueScreen` Compose UI: a `ScalingLazyColumn` of glass pills with the
-  now-playing entry highlighted, wrapped in `SwipeToDismissBox` so a
-  side-swipe closes only the queue instead of exiting the app. Hosting and
-  live data wiring still to come.
+- Fully replaced the legacy `WearableDrawerLayout` queue with a new
+  **`QueueActivity`** hosting a Compose `QueueScreen`:
+  - `ScalingLazyColumn` of dark glass pills; the now-playing entry is
+    highlighted with the album's lightened (pastel) accent colour.
+  - Animated three-bar **equalizer** next to the playing track.
+  - **Marquee** scrolling for long titles inside the pill.
+  - Clock rendered as **`CurvedText`** along the top bezel, matching the Wear
+    OS style; it fades out as the user scrolls down.
+  - Thin curved **scroll indicator** on the right bezel — fixed thumb size
+    (no erratic resize with the rotary crown), auto-hides 1.2 s after
+    scrolling stops.
+  - **Swipe-to-dismiss** closes only the queue (reveals the now-playing
+    screen underneath); the system window animation is suppressed so the
+    Compose transition plays cleanly without a double-close flash.
+  - Google Sans used throughout to match the rest of the watch UI.
+- Artist name on the now-playing screen and in the quick-actions panel now
+  uses a HSL-lightened version of the album accent (dark colours, e.g. deep
+  purple, become a readable pastel; black text always used in the queue).
+
+### Bug fixes (mobile + wear)
+
+- **Shuffle button always appeared active**: apps that never set their shuffle
+  mode report `SHUFFLE_MODE_INVALID (-1)` which is not `SHUFFLE_MODE_NONE
+  (0)`, so the comparison wrongly treated them as "shuffling". Fixed by
+  checking for the explicitly-ON states (`ALL` / `GROUP`) instead.
+- **Repeat button skipped "repeat one" on some apps** (e.g. Retro Music):
+  `REPEAT_MODE_GROUP` is semantically "repeat all" but was falling through to
+  the `else → NONE` branch in `RepeatAction`, bypassing repeat-one. Fixed.
+- **Album art missing on Retro Music and other apps**: many apps on Android
+  10+ provide art as a `content://` URI rather than a raw `Bitmap` to reduce
+  memory usage. Added URI fallback (`ALBUM_ART_URI` / `ART_URI` /
+  `DISPLAY_ICON_URI`) with synchronous `ContentResolver` loading (network
+  URIs are skipped to avoid blocking the main thread).
+- **Like / favourite button not reflecting state on watch after toggling**:
+  some apps don't immediately re-publish their playback state after handling a
+  custom like action. A forced re-read of the state is now scheduled 500 ms
+  after every like action so the watch button updates even in that case.
 
 ## 1.11
 

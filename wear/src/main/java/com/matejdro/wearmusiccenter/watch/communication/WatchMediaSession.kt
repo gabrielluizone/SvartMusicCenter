@@ -1,12 +1,15 @@
 package com.matejdro.wearmusiccenter.watch.communication
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media.VolumeProviderCompat
 import com.matejdro.wearmusiccenter.proto.MusicState
+import com.matejdro.wearmusiccenter.watch.view.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -53,6 +56,25 @@ class WatchMediaSession(
             }
 
     private val session = MediaSessionCompat(context, "WatchMusicCenter").apply {
+        // Flags tell the system this session handles both transport controls (play/pause/skip) and
+        // hardware media buttons. Without them, Wear OS recents doesn't show the current track
+        // under the app name (the system only surfaces metadata from flagged, active sessions).
+        @Suppress("DEPRECATION")
+        setFlags(
+            MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS or
+            MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS
+        )
+        // Link the session to the main activity so the system knows which task it belongs to.
+        // This makes the Wear OS recents card show the currently playing song name.
+        val launchIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        setSessionActivity(
+            PendingIntent.getActivity(
+                context, 0, launchIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        )
         setCallback(callback)
         setPlaybackToRemote(volumeProvider)
     }

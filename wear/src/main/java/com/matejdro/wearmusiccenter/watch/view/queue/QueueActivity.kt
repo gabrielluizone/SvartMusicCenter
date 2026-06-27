@@ -1,6 +1,7 @@
 package com.matejdro.wearmusiccenter.watch.view.queue
 
 import android.os.Bundle
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -17,6 +18,9 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class QueueActivity : ComponentActivity() {
     private val viewModel: QueueViewModel by viewModels()
+    // Guard against finish() being called more than once (Compose dismiss + noHistory + system
+    // swipe can all fire close events; only the first one should take effect).
+    @Volatile private var finishCalled = false
 
     companion object {
         /**
@@ -38,6 +42,19 @@ class QueueActivity : ComponentActivity() {
         suppressLegacyQueueUntil = System.currentTimeMillis() + 1500
     }
 
+    private fun safeFinish() {
+        if (!finishCalled) {
+            finishCalled = true
+            // Make the window invisible before calling finish() so there is no flash from
+            // the translucent/empty window being briefly visible while the system transitions
+            // back to MainActivity.
+            window.decorView.visibility = View.INVISIBLE
+            finish()
+            @Suppress("DEPRECATION")
+            overridePendingTransition(0, 0)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -55,9 +72,9 @@ class QueueActivity : ComponentActivity() {
                     nowPlayingArtist = nowPlaying?.artist,
                     onItemClick = { entryId ->
                         viewModel.selectItem(entryId)
-                        finish()
+                        safeFinish()
                     },
-                    onDismiss = { finish() }
+                    onDismiss = { safeFinish() }
             )
         }
     }
