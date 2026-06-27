@@ -676,9 +676,12 @@ class MainActivity : WearCompanionWatchActivity(),
             return@Observer
         }
 
-        // The playback queue is identified by a now-playing activeEntryId - it is shown only by
-        // QueueActivity, never the legacy drawer. Configured custom lists (no active entry) still use it.
-        if (!it.activeEntryId.isNullOrEmpty()) {
+        // Playback queue (PLAYLIST) and its history fallback (HISTORY) belong to QueueActivity
+        // exclusively. Block both by listId, not only by activeEntryId — some apps never set
+        // activeQueueItemId, which previously left activeEntryId null and let the old drawer open.
+        if (!it.activeEntryId.isNullOrEmpty() ||
+                it.listId == CustomLists.PLAYLIST ||
+                it.listId == CustomLists.HISTORY) {
             return@Observer
         }
 
