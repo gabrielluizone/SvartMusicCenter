@@ -2,14 +2,17 @@ package com.matejdro.wearmusiccenter.watch.view.queue
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,13 +25,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -38,11 +49,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.SwipeToDismissBox
 import androidx.wear.compose.material3.Text
+import androidx.core.graphics.ColorUtils
 import com.matejdro.wearmusiccenter.R
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -60,6 +73,8 @@ data class QueueItemUi(
 // Idle rows are near-black for an OLED-dark look; the now-playing row uses the full album accent.
 private val IDLE_PILL_COLOR = Color(0xFF202022)
 private const val SUBTITLE_ALPHA = 0.65f
+// Minimum HSL lightness for the now-playing accent so black text always reads on it.
+private const val MIN_ACCENT_LIGHTNESS = 0.62f
 
 /** The app-wide Google Sans typeface, so the queue matches the rest of the watch UI. */
 private val GoogleSans = FontFamily(
@@ -69,8 +84,8 @@ private val GoogleSans = FontFamily(
 
 /**
  * Playback queue screen. A [ScalingLazyColumn] of glass pills (with a now-playing header on top)
- * where the active entry is highlighted with the full album [accentColor] and black text. Wrapped
- * in a [SwipeToDismissBox] so swiping right closes only this screen via [onDismiss].
+ * where the active entry is highlighted with the full album [accentColor] and a contrast-matched
+ * text color. Wrapped in a [SwipeToDismissBox] so swiping right closes only this screen.
  */
 @Composable
 fun QueueScreen(
@@ -119,20 +134,7 @@ private fun QueueList(
             }
         }
 
-        // Minimal scroll position thumb on the right bezel (header + items = items.size + 1).
-        val total = items.size + 1
-        if (total > 3) {
-            val fraction = (listState.centerItemIndex.toFloat() / (total - 1)).coerceIn(0f, 1f)
-            Box(
-                    Modifier
-                            .align(BiasAlignment(horizontalBias = 1f, verticalBias = fraction * 2f - 1f))
-                            .padding(end = 2.dp)
-                            .width(4.dp)
-                            .height(26.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(Color.White.copy(alpha = 0.35f))
-            )
-        }
+        CurvedScrollIndicator(listState)
     }
 }
 
@@ -180,13 +182,10 @@ private fun QueueRow(
         accentColor: Color,
         onItemClick: (String) -> Unit
 ) {
-    val pillColor = if (item.isPlaying) accentColor else IDLE_PILL_COLOR
-    val titleColor = if (item.isPlaying) Color.Black else Color.White
-    val subtitleColor = if (item.isPlaying) {
-        Color.Black.copy(alpha = 0.7f)
-    } else {
-        Color.White.copy(alpha = SUBTITLE_ALPHA)
-    }
+    // Now-playing text/glyph is always black; the accent is lightened so black always reads,
+    // turning dark albums (e.g. purple) into a dark-theme-friendly pastel of the same hue.
+    val pillColor = if (item.isPlaying) lightenForBlackText(accentColor) else IDLE_PILL_COLOR
+    val onPill = if (item.isPlaying) Color.Black else Color.White
 
     Row(
             modifier = Modifier
@@ -200,7 +199,7 @@ private fun QueueRow(
         Column(Modifier.weight(1f)) {
             Text(
                     text = item.title,
-                    color = titleColor,
+                    color = onPill,
                     fontFamily = GoogleSans,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
@@ -211,7 +210,7 @@ private fun QueueRow(
             if (!item.subtitle.isNullOrBlank()) {
                 Text(
                         text = item.subtitle,
-                        color = subtitleColor,
+                        color = onPill.copy(alpha = SUBTITLE_ALPHA),
                         fontFamily = GoogleSans,
                         fontSize = 12.sp,
                         maxLines = 1,
@@ -222,8 +221,68 @@ private fun QueueRow(
 
         if (item.isPlaying) {
             Spacer(Modifier.width(8.dp))
-            NowPlayingBars(color = titleColor)
+            NowPlayingBars(color = onPill)
         }
+    }
+}
+
+/**
+ * Thin curved scroll indicator that hugs the right bezel and auto-hides ~1.2s after scrolling stops.
+ */
+@Composable
+private fun BoxScope.CurvedScrollIndicator(listState: ScalingLazyListState) {
+    val total = listState.layoutInfo.totalItemsCount
+    if (total <= 1) return
+
+    var active by remember { mutableStateOf(false) }
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress) {
+            active = true
+        } else {
+            delay(1200L)
+            active = false
+        }
+    }
+    val alpha by animateFloatAsState(
+            targetValue = if (active) 1f else 0f,
+            animationSpec = tween(300),
+            label = "scrollIndicatorAlpha"
+    )
+    if (alpha <= 0.01f) return
+
+    val visible = listState.layoutInfo.visibleItemsInfo.size.coerceAtLeast(1)
+    val thumbFraction = (visible.toFloat() / total).coerceIn(0.12f, 1f)
+    val scrollFraction = (listState.centerItemIndex.toFloat() / (total - 1)).coerceIn(0f, 1f)
+
+    val arcSpan = 70f
+    Canvas(Modifier.fillMaxSize()) {
+        val stroke = 4.dp.toPx()
+        val inset = stroke / 2f + 3.dp.toPx()
+        val side = size.minDimension - inset * 2f
+        val arcSize = Size(side, side)
+        val topLeft = Offset((size.width - side) / 2f, (size.height - side) / 2f)
+
+        drawArc(
+                color = Color.White.copy(alpha = 0.15f * alpha),
+                startAngle = -arcSpan / 2f,
+                sweepAngle = arcSpan,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
+        )
+
+        val thumbSweep = arcSpan * thumbFraction
+        val thumbStart = -arcSpan / 2f + (arcSpan - thumbSweep) * scrollFraction
+        drawArc(
+                color = Color.White.copy(alpha = 0.75f * alpha),
+                startAngle = thumbStart,
+                sweepAngle = thumbSweep,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
+        )
     }
 }
 
@@ -268,19 +327,27 @@ private fun Bar(color: Color, heightFraction: Float) {
 
 private fun currentTime(): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
 
+/** Raises a color's lightness so black text always reads on it, keeping the hue (pastel on dark). */
+private fun lightenForBlackText(color: Color): Color {
+    val hsl = FloatArray(3)
+    ColorUtils.colorToHSL(color.toArgb(), hsl)
+    hsl[2] = hsl[2].coerceAtLeast(MIN_ACCENT_LIGHTNESS)
+    return Color(ColorUtils.HSLToColor(hsl))
+}
+
 @Preview(showBackground = true, backgroundColor = 0xFF000000, widthDp = 220, heightDp = 220)
 @Composable
 private fun QueueScreenPreview() {
     MaterialTheme {
         QueueScreen(
                 items = listOf(
-                        QueueItemUi("1", "City of Delusion", "Muse", false),
-                        QueueItemUi("2", "Viva La Vida", "Coldplay", true),
-                        QueueItemUi("3", "Karma Police", "Radiohead", false)
+                        QueueItemUi("1", "Только звёзды над нами", "BXZX & prettydien", false),
+                        QueueItemUi("2", "WINGS", "Lieless, PRATEIN & Pimpie", true),
+                        QueueItemUi("3", "Otpusti", "hxvvxn & damnenby", false)
                 ),
-                accentColor = Color(0xFFD32F2F),
-                nowPlayingTitle = "Viva La Vida",
-                nowPlayingArtist = "Coldplay",
+                accentColor = Color(0xFF9C5BD0),
+                nowPlayingTitle = "WINGS",
+                nowPlayingArtist = "Lieless, PRATEIN & Pimpie",
                 onItemClick = {},
                 onDismiss = {}
         )
