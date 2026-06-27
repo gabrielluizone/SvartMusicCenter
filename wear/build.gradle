@@ -82,6 +82,7 @@ dependencies {
     implementation libs.androidx.core
     implementation libs.androidx.wear
     implementation libs.androidx.wear.ongoing
+    implementation libs.androidx.media
     implementation libs.androidx.fragment
     implementation libs.androidx.palette
     implementation libs.androidx.activity

@@ -40,10 +40,22 @@ class WatchMusicService : LifecycleService() {
 
     private var serviceTimeoutJob: Job? = null
 
+    private lateinit var mediaSession: WatchMediaSession
+
     override fun onCreate() {
         super.onCreate()
 
         createWearNotification()
+
+        // Proxy MediaSession so the phone's playback shows up in the system Media Controls app and
+        // the Wear OS media surfaces. State is pushed from PhoneConnection; controls forward back.
+        mediaSession = WatchMediaSession(this, phoneConnection, lifecycleScope)
+        phoneConnection.musicState.observe(this) { resource ->
+            mediaSession.update(resource?.data, phoneConnection.albumArt.value)
+        }
+        phoneConnection.albumArt.observe(this) { albumArt ->
+            mediaSession.update(phoneConnection.musicState.value?.data, albumArt)
+        }
 
         lifecycleScope.launch {
             val uiOpenFlow = uiFlow.subscriptionCount
@@ -68,6 +80,13 @@ class WatchMusicService : LifecycleService() {
                         }
                     }
         }
+    }
+
+    override fun onDestroy() {
+        if (::mediaSession.isInitialized) {
+            mediaSession.release()
+        }
+        super.onDestroy()
     }
 
     private fun createWearNotification() {
