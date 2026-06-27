@@ -21,6 +21,8 @@ interface CommPaths {
         const val MESSAGE_CHANGE_VOLUME = "/Messages/SetVolume"
         const val MESSAGE_SEEK_TO = "/Messages/SeekTo"
         const val MESSAGE_TOGGLE_PLAY_PAUSE = "/Messages/TogglePlayPause"
+        const val MESSAGE_SKIP_NEXT = "/Messages/SkipNext"
+        const val MESSAGE_SKIP_PREVIOUS = "/Messages/SkipPrevious"
         const val MESSAGE_QUICK_ACTION = "/Messages/QuickAction"
         const val MESSAGE_EXECUTE_ACTION = "/Messages/Action"
         const val MESSAGE_EXECUTE_MENU_ACTION = "/Messages/MenuAction"

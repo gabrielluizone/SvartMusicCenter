@@ -557,6 +557,12 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
             CommPaths.MESSAGE_TOGGLE_PLAY_PAUSE -> {
                 togglePlayPause()
             }
+            CommPaths.MESSAGE_SKIP_NEXT -> {
+                currentMediaController?.transportControls?.skipToNext()
+            }
+            CommPaths.MESSAGE_SKIP_PREVIOUS -> {
+                currentMediaController?.transportControls?.skipToPrevious()
+            }
             CommPaths.MESSAGE_QUICK_ACTION -> {
                 executeQuickAction(String(event.data, Charsets.UTF_8))
             }

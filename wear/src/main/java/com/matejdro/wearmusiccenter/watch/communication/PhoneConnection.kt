@@ -216,6 +216,14 @@ class PhoneConnection @Inject constructor(@ApplicationContext private val contex
         messageClient.sendMessageToNearestClient(nodeClient, CommPaths.MESSAGE_TOGGLE_PLAY_PAUSE)
     }
 
+    suspend fun sendSkipNext() {
+        messageClient.sendMessageToNearestClient(nodeClient, CommPaths.MESSAGE_SKIP_NEXT)
+    }
+
+    suspend fun sendSkipPrevious() {
+        messageClient.sendMessageToNearestClient(nodeClient, CommPaths.MESSAGE_SKIP_PREVIOUS)
+    }
+
     /** [name] is one of "like"/"shuffle"/"repeat" - see MusicService.onMessageReceived on the phone. */
     suspend fun sendQuickAction(name: String) {
         messageClient.sendMessageToNearestClient(
