@@ -94,6 +94,7 @@ dependencies {
     implementation libs.androidx.wear.compose.material3
     implementation libs.androidx.wear.compose.foundation
     implementation libs.androidx.activity.compose
+    implementation libs.androidx.compose.runtime.livedata
     implementation libs.androidx.fragment
     implementation libs.androidx.palette
     implementation libs.androidx.activity

@@ -60,6 +60,7 @@ import com.matejdro.wearmusiccenter.proto.MusicState
 import com.matejdro.wearmusiccenter.watch.communication.CustomListWithBitmaps
 import com.matejdro.wearmusiccenter.watch.communication.WatchInfoSender
 import com.matejdro.wearmusiccenter.watch.communication.WatchMusicService
+import com.matejdro.wearmusiccenter.watch.view.queue.QueueActivity
 import com.matejdro.wearmusiccenter.watch.config.WatchActionConfigProvider
 import com.matejdro.wearmusiccenter.watch.model.Notification
 import com.matejdro.wearutils.companionnotice.WearCompanionWatchActivity
@@ -232,14 +233,9 @@ class MainActivity : WearCompanionWatchActivity(),
         binding.quickActionUpNext.setOnClickListener {
             buzz()
             hideOverlay()
-            // Same call the working, separately-configured "open queue" button uses - unlike
-            // openDefaultListInDrawer(), this isn't gated behind the swipe-up-specific preference,
-            // so Up Next always opens the real queue regardless of that setting.
-            viewModel.openPlaybackQueue()
-            actionsMenuFragment.refreshMenu(
-                    ActionsMenuFragment.MenuType.Custom(CustomListWithBitmaps(-1, "", emptyList()))
-            )
-            binding.actionDrawer.controller.openDrawer()
+            // Opens the new Compose queue screen (swipe-to-dismiss closes just it). QueueActivity
+            // requests the queue itself, so no need to prime the old drawer list here.
+            startActivity(Intent(this, QueueActivity::class.java))
         }
 
         // Title's floor (22sp) is kept comfortably above artist's ceiling (16sp) so the title
