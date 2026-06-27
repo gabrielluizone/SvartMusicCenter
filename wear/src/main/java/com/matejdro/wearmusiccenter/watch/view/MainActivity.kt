@@ -667,6 +667,12 @@ class MainActivity : WearCompanionWatchActivity(),
             return@Observer
         }
 
+        // The playback queue is identified by a now-playing activeEntryId - it is shown only by
+        // QueueActivity, never the legacy drawer. Configured custom lists (no active entry) still use it.
+        if (!it.activeEntryId.isNullOrEmpty()) {
+            return@Observer
+        }
+
         val lastListDisplayed = Preferences.getString(
                 preferences,
                 MiscPreferences.LAST_MENU_DISPLAYED
@@ -731,21 +737,14 @@ class MainActivity : WearCompanionWatchActivity(),
     }
 
     private fun openDefaultListInDrawer() {
-        val type = if (Preferences.getBoolean(
-                        preferences,
-                        MiscPreferences.OPEN_PLAYBACK_QUEUE_ON_SWIPE_UP
-                )
-        ) {
-            viewModel.openPlaybackQueue()
-
-            ActionsMenuFragment.MenuType.Custom(
-                    CustomListWithBitmaps(-1, "", emptyList())
-            )
-        } else {
-            ActionsMenuFragment.MenuType.Actions
+        if (Preferences.getBoolean(preferences, MiscPreferences.OPEN_PLAYBACK_QUEUE_ON_SWIPE_UP)) {
+            // The queue now opens as the Compose QueueActivity (swipe-to-dismiss), not the drawer.
+            binding.actionDrawer.controller.closeDrawer()
+            startActivity(Intent(this, QueueActivity::class.java))
+            return
         }
 
-        actionsMenuFragment.refreshMenu(type)
+        actionsMenuFragment.refreshMenu(ActionsMenuFragment.MenuType.Actions)
     }
 
     private val ambientCallback = object : AmbientLifecycleObserver.AmbientLifecycleCallback {

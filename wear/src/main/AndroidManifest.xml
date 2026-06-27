@@ -109,7 +109,11 @@
 
         <activity
             android:name=".watch.view.queue.QueueActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
     </application>
 
 </manifest>
