@@ -2,6 +2,8 @@ package com.matejdro.wearmusiccenter
 
 import android.app.Application
 import android.content.pm.ApplicationInfo
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.preference.PreferenceManager
 import com.matejdro.wearmusiccenter.di.DaggerAppComponent
 import com.matejdro.wearmusiccenter.logging.CrashlyticsExceptionWearHandler
 import com.matejdro.wearmusiccenter.logging.TimberCrashlytics
@@ -39,6 +41,18 @@ class WearMusicCenter : Application(), HasAndroidInjector {
         val fileLogger = FileLogger.getInstance(this)
         fileLogger.activate()
         Timber.plant(fileLogger)
+
+        applyThemeFromPreferences()
+    }
+
+    private fun applyThemeFromPreferences() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val mode = when (prefs.getString("app_theme", "system")) {
+            "light" -> AppCompatDelegate.MODE_NIGHT_NO
+            "dark" -> AppCompatDelegate.MODE_NIGHT_YES
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        AppCompatDelegate.setDefaultNightMode(mode)
     }
 
     override fun androidInjector(): AndroidInjector<Any> = androidInjector

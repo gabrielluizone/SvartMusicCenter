@@ -2,7 +2,7 @@
 <resources>
     <color name="music_screen_ripple">#FFFFFFFF</color>
 
-    <color name="primary">#009688</color>
-    <color name="primary_dark">#00796B</color>
-    <color name="accent">#FFC107</color>
+    <color name="primary">#87A89F</color>
+    <color name="primary_dark">#6B9088</color>
+    <color name="accent">#87A89F</color>
 </resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lyra dark mode — OLED-first: preto real como fundo -->
+    <color name="lyra_background">@color/lyra_void</color>
+    <color name="lyra_surface">@color/lyra_shadow</color>
+    <color name="lyra_on_surface">@color/lyra_snow</color>
+    <color name="lyra_text_secondary">@color/lyra_ash</color>
+    <color name="lyra_divider">@color/lyra_carbon</color>
+    <color name="lyra_nav_inactive">@color/lyra_ash</color>
+    <color name="lyra_pref_summary">#b3b3b3</color>
+    <!-- Sage suave no OLED, sem forçar contraste -->
+    <color name="lyra_accent">@color/lyra_sage</color>
+    <color name="lyra_accent_highlight">#2087A89F</color>
+    <color name="watch_background">#202124</color>
+</resources>

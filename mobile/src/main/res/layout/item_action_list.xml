@@ -6,6 +6,7 @@
     android:background="@drawable/action_list_item_background"
     android:clickable="true"
     android:focusable="true"
+    android:paddingStart="12dp"
     android:orientation="horizontal">
 
     <ImageView

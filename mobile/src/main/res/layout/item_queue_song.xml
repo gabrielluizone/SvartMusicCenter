@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/queue_item_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="20dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:background="?selectableItemBackground">
+
+    <!-- Active indicator bar -->
+    <View
+        android:id="@+id/queue_item_active_bar"
+        android:layout_width="3dp"
+        android:layout_height="28dp"
+        android:background="@color/lyra_accent"
+        android:layout_marginEnd="12dp"
+        android:visibility="invisible" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/queue_item_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="@color/lyra_on_surface"
+            android:fontFamily="@font/google_sans"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false" />
+
+        <TextView
+            android:id="@+id/queue_item_artist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:textColor="@color/lyra_text_secondary"
+            android:fontFamily="@font/google_sans"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:layout_marginTop="1dp" />
+
+    </LinearLayout>
+
+    <!-- Now playing icon (visible only for active track) -->
+    <ImageView
+        android:id="@+id/queue_item_playing_icon"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:src="@drawable/ic_playlist_play"
+        android:tint="@color/lyra_accent"
+        android:visibility="gone"
+        android:contentDescription="Tocando" />
+
+</LinearLayout>

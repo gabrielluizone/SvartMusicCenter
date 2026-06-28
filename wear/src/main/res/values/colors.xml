@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Wear-only theme accent, overrides the shared (orange) common.accent for this module -->
-    <color name="theme_accent">#4F6DAB</color>
+    <color name="theme_accent">#87A89F</color>
 
-    <color name="music_screen_volume_bar_foreground_color">#4F6DAB</color>
+    <color name="music_screen_volume_bar_foreground_color">#87A89F</color>
     <color name="music_screen_volume_bar_background_color">#33FFFFFF</color>
 
     <color name="ambient_clock_color">#99FFFFFF</color>

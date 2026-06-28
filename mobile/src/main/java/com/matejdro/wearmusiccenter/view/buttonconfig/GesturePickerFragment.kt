@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.drawable.VectorDrawable
 import android.os.Bundle
@@ -157,22 +156,28 @@ class GesturePickerFragment : DialogFragment() {
     }
 
     private fun updateButton(buttonSet: ButtonSet, phoneAction: PhoneAction?) {
-        var mutableAction = phoneAction
+        val isNotSet = phoneAction == null || phoneAction is NullAction
+        val mutableAction = phoneAction ?: NullAction(requireActivity())
 
-        if (mutableAction == null) {
-            mutableAction = NullAction(requireActivity())
+        // "Not set" gets a subtle muted look with a + affordance; real actions use their own icon.
+        val primaryColor = ContextCompat.getColor(requireContext(), R.color.lyra_on_surface)
+        val mutedColor = ContextCompat.getColor(requireContext(), R.color.lyra_text_secondary)
+
+        var icon = if (isNotSet) {
+            ContextCompat.getDrawable(requireContext(), R.drawable.ic_plus)!!
+        } else {
+            customIconStorage[mutableAction]
         }
-
-        var icon = customIconStorage[mutableAction]
         if (icon is VectorDrawable) {
             icon = icon.mutate()
-            icon.setColorFilter(Color.BLACK, PorterDuff.Mode.MULTIPLY)
+            icon.setColorFilter(if (isNotSet) mutedColor else primaryColor, PorterDuff.Mode.SRC_ATOP)
         }
 
         val iconSize = resources.getDimensionPixelSize(R.dimen.action_icon_size)
         icon.setBounds(0, 0, iconSize, iconSize)
 
         buttonSet.button.text = mutableAction.title
+        buttonSet.button.setTextColor(if (isNotSet) mutedColor else primaryColor)
         buttonSet.button.setCompoundDrawables(icon, null, null, null)
 
         val configFragmentClass = mutableAction.configFragment

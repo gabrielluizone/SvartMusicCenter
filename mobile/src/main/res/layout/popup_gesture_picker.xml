@@ -1,119 +1,184 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minWidth="200dp"
-    android:orientation="vertical"
-    android:paddingLeft="10dp"
-    android:paddingTop="10dp"
-    android:paddingRight="10dp">
+    android:minWidth="280dp"
+    android:orientation="vertical">
 
-    <Button
+    <!-- Change icon chip (only for screen buttons) -->
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/customize_icon"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="16dp"
         android:drawableStart="@drawable/ic_palette"
-        android:drawablePadding="10dp"
-        android:text="@string/change_icon" />
+        android:drawablePadding="8dp"
+        android:fontFamily="@font/google_sans"
+        android:text="@string/change_icon"
+        android:textColor="@color/lyra_accent"
+        android:textSize="13sp"
+        app:iconTint="@color/lyra_accent"
+        android:visibility="gone" />
 
-
+    <!-- Single tap section -->
     <TextView
         android:id="@+id/single_press_description"
-        style="@style/TextAppearance.AppCompat.Caption"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/gesture_single_press" />
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        android:fontFamily="@font/google_sans"
+        android:letterSpacing="0.08"
+        android:text="@string/gesture_single_press"
+        android:textAllCaps="true"
+        android:textColor="@color/lyra_accent"
+        android:textSize="10sp" />
 
     <Button
         android:id="@+id/single_press_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:drawablePadding="10dp"
-        tools:drawableLeft="@drawable/action_volume_up"
-        tools:drawableTint="@android:color/black"
+        style="@style/LyraGestureButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="16dp"
+        android:drawablePadding="12dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         tools:text="Volume up" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/single_press_config_fragment"
-        tools:name="com.matejdro.wearmusiccenter.view.actionconfigs.SkipSecondsConfigFragment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="32dp" />
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        tools:name="com.matejdro.wearmusiccenter.view.actionconfigs.SkipSecondsConfigFragment" />
 
+    <!-- Double tap section -->
     <TextView
         android:id="@+id/double_press_description"
-        style="@style/TextAppearance.AppCompat.Caption"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:text="@string/gesture_double_press" />
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        android:fontFamily="@font/google_sans"
+        android:letterSpacing="0.08"
+        android:text="@string/gesture_double_press"
+        android:textAllCaps="true"
+        android:textColor="@color/lyra_accent"
+        android:textSize="10sp" />
 
     <Button
         android:id="@+id/double_press_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:drawablePadding="10dp"
-        tools:drawableLeft="@drawable/action_volume_up"
-        tools:drawableTint="@android:color/black"
-        tools:text="Volume down" />
+        style="@style/LyraGestureButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="16dp"
+        android:drawablePadding="12dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        tools:text="Skip next" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/double_press_config_fragment"
-        tools:name="com.matejdro.wearmusiccenter.view.actionconfigs.SkipSecondsConfigFragment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="32dp" />
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        tools:name="com.matejdro.wearmusiccenter.view.actionconfigs.SkipSecondsConfigFragment" />
 
+    <!-- Long press section -->
     <TextView
         android:id="@+id/long_press_description"
-        style="@style/TextAppearance.AppCompat.Caption"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:text="@string/gesture_long_press" />
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        android:fontFamily="@font/google_sans"
+        android:letterSpacing="0.08"
+        android:text="@string/gesture_long_press"
+        android:textAllCaps="true"
+        android:textColor="@color/lyra_accent"
+        android:textSize="10sp"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/long_press_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:drawablePadding="10dp"
-        tools:drawableLeft="@drawable/action_pause"
-        tools:drawableTint="@android:color/black"
+        style="@style/LyraGestureButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="16dp"
+        android:drawablePadding="12dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:visibility="gone"
         tools:text="Pause" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/long_press_config_fragment"
-        tools:name="com.matejdro.wearmusiccenter.view.actionconfigs.SkipSecondsConfigFragment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="32dp" />
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        tools:name="com.matejdro.wearmusiccenter.view.actionconfigs.SkipSecondsConfigFragment" />
 
+    <!-- Divider before action buttons -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="16dp"
+        android:background="@color/lyra_divider" />
+
+    <!-- OK / Cancel row -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:orientation="horizontal">
+        android:gravity="end"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp">
 
         <Button
             android:id="@+id/cancel_button"
             style="?attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@android:string/cancel" />
+            android:fontFamily="@font/google_sans"
+            android:text="@android:string/cancel"
+            android:textColor="@color/lyra_text_secondary"
+            android:textSize="14sp" />
 
         <Button
             android:id="@+id/ok_button"
             style="?attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@android:string/ok" />
+            android:fontFamily="@font/google_sans"
+            android:text="@android:string/ok"
+            android:textColor="@color/lyra_accent"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
-</LinearLayout>
 
+</LinearLayout>

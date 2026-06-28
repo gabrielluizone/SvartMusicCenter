@@ -3,6 +3,7 @@ package com.matejdro.wearmusiccenter.view.buttonconfig
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.VectorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -126,7 +127,8 @@ class ButtonConfigFragment : Fragment(), FourWayTouchLayout.UserActionListener {
                 watchInfo!!.icons[buttonCode]
             }
 
-            icon?.setTint(Color.BLACK)
+            // Tint to the theme's on-surface color so icons stay visible in both light and dark mode.
+            icon?.setTint(ContextCompat.getColor(requireContext(), R.color.lyra_on_surface))
 
             val buttonBinding = ItemWatchButtonBinding.inflate(inflater, binding.watchButtonContainer, true)
 
@@ -163,7 +165,13 @@ class ButtonConfigFragment : Fragment(), FourWayTouchLayout.UserActionListener {
             return
         }
 
-        imageView.setImageDrawable(customIconStorage[phoneAction])
+        // The watch face preview is always dark, so default (vector) icons are forced white
+        // to stay legible. Custom user-picked bitmaps are shown untouched.
+        val icon = customIconStorage[phoneAction]
+        if (icon is VectorDrawable) {
+            icon.mutate().setTint(Color.WHITE)
+        }
+        imageView.setImageDrawable(icon)
     }
 
     override fun onSingleTap(quadrant: Int) {

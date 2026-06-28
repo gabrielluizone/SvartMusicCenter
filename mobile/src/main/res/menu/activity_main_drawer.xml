@@ -1,27 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-      xmlns:tools="http://schemas.android.com/tools"
-      tools:showIn="navigation_view">
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <group android:checkableBehavior="single">
-        <item
-            android:id="@+id/playing_controls"
-            android:icon="@drawable/ic_play_black"
-            android:title="@string/playing_controls"/>
-        <item
-            android:id="@+id/stopped_controls"
-            android:icon="@drawable/ic_pause_black"
-            android:title="@string/stopped_controls"/>
-
-        <item
-            android:id="@+id/actions_menu"
-            android:icon="@drawable/ic_actions_menu"
-            android:title="@string/actions_menu"/>
-
-        <item
-            android:id="@+id/settings"
-            android:icon="@drawable/ic_settings"
-            android:title="@string/misc_settings" />
-    </group>
+    <item
+        android:id="@+id/playing_controls"
+        android:icon="@drawable/ic_nav_playing"
+        android:title="@string/nav_playing" />
+    <item
+        android:id="@+id/stopped_controls"
+        android:icon="@drawable/ic_nav_stopped"
+        android:title="@string/nav_stopped" />
+    <item
+        android:id="@+id/actions_menu"
+        android:icon="@drawable/ic_nav_actions"
+        android:title="@string/nav_actions" />
+    <item
+        android:id="@+id/settings"
+        android:icon="@drawable/ic_nav_settings"
+        android:title="@string/nav_settings" />
 
 </menu>

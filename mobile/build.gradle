@@ -67,6 +67,7 @@ dependencies {
     implementation libs.androidx.lifecycle.service
     implementation libs.androidx.lifecycle.viewmodel
     implementation libs.androidx.media
+    implementation libs.androidx.palette
     coreLibraryDesugaring(libs.desugarJdkLibs)
 
     implementation libs.google.playServices.wearable

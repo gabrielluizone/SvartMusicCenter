@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -9,140 +8,176 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingLeft="@dimen/activity_horizontal_margin"
-        android:paddingTop="16dp"
-        android:paddingRight="@dimen/activity_horizontal_margin"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        tools:context=".view.mainactivity.MainActivity"
-        tools:minHeight="400dp"
-        tools:showIn="@layout/app_bar_main">
+        android:paddingBottom="24dp"
+        tools:minHeight="500dp">
 
+        <!-- Section header: On-screen buttons -->
         <TextView
             android:id="@+id/on_screen_buttons_caption"
-            style="@style/TextAppearance.AppCompat.Caption"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="20dp"
+            android:fontFamily="@font/google_sans"
+            android:letterSpacing="0.08"
             android:text="@string/on_screen_buttons"
+            android:textAllCaps="true"
+            android:textColor="@color/lyra_accent"
+            android:textSize="11sp"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <!-- Hint -->
+        <TextView
+            android:id="@+id/on_screen_hint"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="20dp"
+            android:fontFamily="@font/google_sans"
+            android:text="@string/tap_a_zone_to_configure"
+            android:textColor="@color/lyra_pref_summary"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/on_screen_buttons_caption" />
+
+        <!-- Watch face: fixed-size dark preview, centered -->
         <ImageView
             android:id="@+id/watch_display_background"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            app:layout_constraintBottom_toBottomOf="@+id/four_way_touch"
-            app:layout_constraintEnd_toEndOf="@+id/four_way_touch"
-            app:layout_constraintStart_toStartOf="@+id/four_way_touch"
-            app:layout_constraintTop_toTopOf="@+id/four_way_touch"
+            android:layout_width="244dp"
+            android:layout_height="244dp"
+            android:layout_marginTop="20dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/on_screen_hint"
             tools:ignore="ContentDescription"
-            tools:src="@drawable/watch_square_background" />
+            tools:src="@drawable/watch_round_background" />
 
         <com.matejdro.wearmusiccenter.common.view.FourWayTouchLayout
             android:id="@+id/four_way_touch"
-            android:layout_width="205dp"
-            android:layout_height="205dp"
-            android:visibility="visible"
-            app:layout_constraintBottom_toBottomOf="@+id/icon_bottom"
-            app:layout_constraintEnd_toEndOf="@+id/icon_right"
-            app:layout_constraintStart_toStartOf="@+id/icon_left"
-            app:layout_constraintTop_toTopOf="@+id/icon_top" />
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="@+id/watch_display_background"
+            app:layout_constraintEnd_toEndOf="@+id/watch_display_background"
+            app:layout_constraintStart_toStartOf="@+id/watch_display_background"
+            app:layout_constraintTop_toTopOf="@+id/watch_display_background" />
 
         <ImageView
             android:id="@+id/watch_display_border"
-            android:layout_width="205dp"
-            android:layout_height="205dp"
-            app:layout_constraintBottom_toBottomOf="@+id/four_way_touch"
-            app:layout_constraintEnd_toEndOf="@+id/four_way_touch"
-            app:layout_constraintStart_toStartOf="@+id/four_way_touch"
-            app:layout_constraintTop_toTopOf="@+id/four_way_touch"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="@+id/watch_display_background"
+            app:layout_constraintEnd_toEndOf="@+id/watch_display_background"
+            app:layout_constraintStart_toStartOf="@+id/watch_display_background"
+            app:layout_constraintTop_toTopOf="@+id/watch_display_background"
             tools:ignore="ContentDescription"
-            tools:src="@drawable/watch_square_border" />
+            tools:src="@drawable/watch_round_border" />
 
-
-        <ImageView
-            android:id="@+id/icon_left"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:adjustViewBounds="false"
-            android:padding="10dp"
-            android:src="@drawable/action_pause"
-            app:layout_constraintEnd_toStartOf="@+id/space4"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintHorizontal_chainStyle="packed"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/space4"
-            tools:ignore="ContentDescription" />
-
+        <!-- Top zone icon -->
         <ImageView
             android:id="@+id/icon_top"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_marginTop="24dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="20dp"
             android:padding="10dp"
-            android:src="@drawable/action_volume_up"
-            app:layout_constraintStart_toStartOf="@+id/space4"
-            app:layout_constraintTop_toBottomOf="@+id/on_screen_buttons_caption"
-            app:layout_constraintVertical_chainStyle="packed"
-            tools:ignore="ContentDescription" />
+            app:layout_constraintEnd_toEndOf="@+id/watch_display_background"
+            app:layout_constraintStart_toStartOf="@+id/watch_display_background"
+            app:layout_constraintTop_toTopOf="@+id/watch_display_background"
+            tools:ignore="ContentDescription"
+            tools:src="@drawable/action_volume_up"
+            tools:tint="#FFFFFF" />
 
-        <ImageView
-            android:id="@+id/icon_right"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:padding="10dp"
-            android:src="@drawable/action_skip_next"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/space4"
-            app:layout_constraintTop_toTopOf="@+id/space4"
-            tools:ignore="ContentDescription" />
-
+        <!-- Bottom zone icon -->
         <ImageView
             android:id="@+id/icon_bottom"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="20dp"
             android:padding="10dp"
-            android:src="@drawable/action_volume_down"
-            app:layout_constraintStart_toStartOf="@+id/space4"
-            app:layout_constraintTop_toBottomOf="@+id/space4"
-            tools:ignore="ContentDescription" />
+            app:layout_constraintBottom_toBottomOf="@+id/watch_display_background"
+            app:layout_constraintEnd_toEndOf="@+id/watch_display_background"
+            app:layout_constraintStart_toStartOf="@+id/watch_display_background"
+            tools:ignore="ContentDescription"
+            tools:src="@drawable/action_volume_down"
+            tools:tint="#FFFFFF" />
 
-        <Space
-            android:id="@+id/space4"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            app:layout_constraintEnd_toStartOf="@+id/icon_right"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/icon_left"
-            app:layout_constraintTop_toBottomOf="@+id/icon_top" />
+        <!-- Left zone icon -->
+        <ImageView
+            android:id="@+id/icon_left"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="20dp"
+            android:padding="10dp"
+            app:layout_constraintBottom_toBottomOf="@+id/watch_display_background"
+            app:layout_constraintStart_toStartOf="@+id/watch_display_background"
+            app:layout_constraintTop_toTopOf="@+id/watch_display_background"
+            tools:ignore="ContentDescription"
+            tools:src="@drawable/action_skip_prev"
+            tools:tint="#FFFFFF" />
 
+        <!-- Right zone icon -->
+        <ImageView
+            android:id="@+id/icon_right"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="20dp"
+            android:padding="10dp"
+            app:layout_constraintBottom_toBottomOf="@+id/watch_display_background"
+            app:layout_constraintEnd_toEndOf="@+id/watch_display_background"
+            app:layout_constraintTop_toTopOf="@+id/watch_display_background"
+            tools:ignore="ContentDescription"
+            tools:src="@drawable/action_skip_next"
+            tools:tint="#FFFFFF" />
+
+        <!-- Divider -->
+        <View
+            android:id="@+id/divider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="28dp"
+            android:layout_marginEnd="20dp"
+            android:background="@color/lyra_divider"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/watch_display_background" />
+
+        <!-- Section header: Physical buttons -->
         <TextView
             android:id="@+id/caption_physical_buttons"
-            style="@style/TextAppearance.AppCompat.Caption"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="24dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="20dp"
+            android:fontFamily="@font/google_sans"
+            android:letterSpacing="0.08"
             android:text="@string/physical_buttons"
+            android:textAllCaps="true"
+            android:textColor="@color/lyra_accent"
+            android:textSize="11sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/icon_bottom" />
+            app:layout_constraintTop_toBottomOf="@+id/divider" />
 
+        <!-- Physical button list -->
         <LinearLayout
             android:id="@+id/watch_button_container"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_below="@id/caption_physical_buttons"
-            android:layout_marginTop="8dp"
-            android:gravity="center_horizontal"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginEnd="20dp"
             android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/caption_physical_buttons" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </ScrollView>

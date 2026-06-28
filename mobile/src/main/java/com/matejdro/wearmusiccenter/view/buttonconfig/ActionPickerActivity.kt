@@ -2,7 +2,6 @@ package com.matejdro.wearmusiccenter.view.buttonconfig
 
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.drawable.VectorDrawable
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +9,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -136,7 +136,8 @@ class ActionPickerActivity : AppCompatActivity() {
 
             val icon = customIconStorage[action]
             if (icon is VectorDrawable) {
-                holder.iconView.setColorFilter(Color.BLACK)
+                val iconColor = ContextCompat.getColor(this@ActionPickerActivity, R.color.lyra_on_surface)
+                holder.iconView.setColorFilter(iconColor)
             } else {
                 holder.iconView.clearColorFilter()
             }

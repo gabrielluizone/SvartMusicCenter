@@ -1,4 +1,28 @@
 <resources>
+    <string name="app_name">Lyra Control</string>
+    <string name="app_name_short">Lyra Control</string>
+
+    <!-- Appearance -->
+    <string name="category_appearance">Appearance</string>
+    <string name="setting_theme">Theme</string>
+    <string name="theme_light">Clearly White</string>
+    <string name="theme_dark">Just Black</string>
+    <string name="theme_system">Follow System</string>
+
+    <!-- Developer mode -->
+    <string name="category_developer">Developer</string>
+    <string name="dev_mode_unlocked">Developer mode enabled ✦</string>
+    <string name="dev_mode_clicks_remaining">%1$d more taps to unlock developer mode</string>
+    <string name="dev_build_info">Build info</string>
+    <string name="easter_egg_title">✦ Lyra ✦</string>
+    <string name="easter_egg_message">You found the Lyra constellation.\n\nLyra — the lyre of Orpheus,\ncast into the sky as a reminder\nthat music outlasts everything.\n\n♪ Built with care. ♪</string>
+    <string name="easter_egg_ok">Close</string>
+
+    <string name="nav_playing">Playing</string>
+    <string name="nav_stopped">Stopped</string>
+    <string name="nav_actions">Actions</string>
+    <string name="nav_settings">Settings</string>
+
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
@@ -18,12 +42,13 @@
     <string name="volume_down">Decrease volume</string>
     <string name="group_volume_controls">Volume controls</string>
     <string name="no_watch_detected">No watch detected</string>
-    <string name="connection_instructions">Open Music Center app on the watch to initiate connection</string>
+    <string name="connection_instructions">Open Lyra Player on the watch to initiate connection</string>
     <string name="playing_controls">Playing controls</string>
     <string name="stopped_controls">Stopped controls</string>
     <string name="actions_menu">Actions menu</string>
     <string name="on_screen_buttons">ON-SCREEN BUTTONS</string>
     <string name="physical_buttons">PHYSICAL BUTTONS</string>
+    <string name="tap_a_zone_to_configure">Tap a zone on the watch to assign an action</string>
     <string name="no_action">No action</string>
     <string name="gesture_single_press">Single press</string>
     <string name="gesture_double_press">Double press</string>
@@ -61,14 +86,14 @@
     <string name="tap_to_force_stop">Tap to force stop</string>
     <string name="error_notification_access">No notification access. Check phone.</string>
     <string name="error_notifications">Error notifications</string>
-    <string name="notification_access_notification_title">Music center needs notification access</string>
-    <string name="notification_access_notification_title_description">Tap this notification and check Music Center to fix the issue</string>
+    <string name="notification_access_notification_title">Lyra Control needs notification access</string>
+    <string name="notification_access_notification_title_description">Tap this notification and check Lyra Control to fix the issue</string>
     <string name="error_service_not_enabled">Service not enabled</string>
     <string name="error_service_not_enabled_description">Notification service is not enabled. You must enable it to get this app to work!</string>
     <string name="action_open_settings">Open Settings</string>
     <string name="required_permission">Required permission</string>
     <string name="setting_pause_on_swipe_exit">Pause playback on swipe exit</string>
-    <string name="setting_pause_on_swipe_exit_description">Automatically pause any playback when exiting Music Center on the watch via swipe-left gesture.\n\nExiting via power button is not affected and it will never auto-pause.</string>
+    <string name="setting_pause_on_swipe_exit_description">Automatically pause any playback when exiting Lyra Player on the watch via swipe-left gesture.\n\nExiting via power button is not affected and it will never auto-pause.</string>
     <string name="setting_rotating_crown_off_period">Rotary input screen on delay</string>
     <string name="setting_rotating_crown_off_period_description">Rotating inputs (for example rotating crowns) can be oversensitive on some devices. To prevent accidental volume changes, rotary input will be disabled for <![CDATA[<b>%1$s milliseconds</b>]]> after you turn the screen on.</string>
     <string name="setting_rotating_sensitivity">Rotary input sensitivity</string>
@@ -77,14 +102,25 @@
     <string name="setting_disable_ambient_physical_double_click_description">Some watches have buggy buttons where single click of the physical button in ambient mode sometimes gets registered as double click.\n\nIf you experience this, you can enable this option to completely disable double clicks in ambient mode (e.g. clicking twice will just activate single click action). Clicking button twice when watch is active is not affected.</string>
     <string name="setting_haptic_feedback">Haptic feedback</string>
     <string name="setting_haptic_feedback_description">Vibrate the watch when pressing buttons.</string>
-    <string name="setting_auto_start">Open Music Center automatically</string>
-    <string name="setting_auto_start_description">Automatically open the Music Center on the watch when music playback is started on the phone.</string>
+    <string name="setting_auto_start">Open Lyra Player automatically</string>
+    <string name="setting_auto_start_description">Automatically open Lyra Player on the watch when music playback is started on the phone.</string>
     <string name="setting_auto_start_apps_blacklist">Auto-start apps</string>
-    <string name="setting_auto_start_apps_blacklist_description">List of media apps that can auto-start Music Center</string>
+    <string name="setting_auto_start_apps_blacklist_description">List of media apps that can auto-start Lyra Player</string>
     <string name="setting_swipe_up_for_queue">Open queue with swipe up gesture</string>
     <string name="setting_swipe_up_for_queue_description">When enabled, swiping up will display playback queue instead of actions menu. You can still open actions menu by assigning "Open actions menu" action to any button.</string>
     <string name="setting_dim_album_art">Dim the album art</string>
     <string name="setting_dim_album_art_description">When enabled, displayed album art will be dimmed, allowing for better text visibility.</string>
+
+    <string-array name="theme_entries">
+        <item>@string/theme_light</item>
+        <item>@string/theme_dark</item>
+        <item>@string/theme_system</item>
+    </string-array>
+    <string-array name="theme_entry_values">
+        <item>light</item>
+        <item>dark</item>
+        <item>system</item>
+    </string-array>
 
     <string-array name="auto_start_modes_keys">
         <item>OFF</item>
@@ -95,14 +131,14 @@
     <string-array name="auto_start_modes_descriptions">
         <item>Disabled</item>
         <item>Show music watchface icon (only for Wear 3.0)</item>
-        <item>Open Music Center</item>
+        <item>Open Lyra Player</item>
     </string-array>
 
     <string name="setting_close_timeout">Close timeout</string>
-    <string name="setting_close_timeout_description">Music Center will automatically close itself when there is no music playing for <![CDATA[<b>%1$s seconds</b>]]>. Feature is disabled when timeout is set to 0 seconds. Please not that, to save battery, this option may not be too accurate at times and it might delay the closing for up to a minute.</string>
+    <string name="setting_close_timeout_description">Lyra Player will automatically close itself when there is no music playing for <![CDATA[<b>%1$s seconds</b>]]>. Feature is disabled when timeout is set to 0 seconds. Please not that, to save battery, this option may not be too accurate at times and it might delay the closing for up to a minute.</string>
     <string name="category_notifications">Notification popup</string>
     <string name="setting_enable_notifications">Show notification popup</string>
-    <string name="setting_enable_notifications_description">This feature requires another app to manage notifications (Vibration Center for Wear).\n\nWhenever Vibration Center vibrates the watch, Music Center will display popup of the notification text, allowing you to glance at notification quickly without leaving Music Center.</string>
+    <string name="setting_enable_notifications_description">This feature requires another app to manage notifications (Vibration Center for Wear).\n\nWhenever Vibration Center vibrates the watch, Lyra Player will display popup of the notification text, allowing you to glance at notification quickly without leaving Lyra Player.</string>
     <string name="setting_notification_timeout">Notification popup timeout</string>
     <string name="setting_notification_timeout_description">Notification popup will automatically close itself after <![CDATA[<b>%1$s seconds</b>]]>. Enter 0 to disable auto-close.</string>
     <string name="app_required">App required</string>
@@ -117,4 +153,25 @@
     <string name="error_playlist_not_supported">Not supported by this media app</string>
     <string name="seconds_to_skip">Seconds to skip:</string>
     <string name="seconds_to_reverse">Seconds to reverse:</string>
+
+    <string name="setting_dynamic_accent_color">Dynamic accent color</string>
+    <string name="setting_dynamic_accent_color_description">When enabled, the accent color (SeekBar, active queue item) automatically adapts to the dominant color of the current album art.</string>
+    <string name="setting_desaturated_color">Desaturated color</string>
+    <string name="setting_desaturated_color_description">Adjusts the saturation and brightness of the extracted color to guarantee high readability and contrast depending on the active theme.</string>
+
+    <string name="queue_header">Playback queue</string>
+    <string name="queue_unavailable">Queue unavailable</string>
+
+    <string name="setting_custom_accent_color">Accent color</string>
+    <string name="setting_custom_accent_color_description">Choose a custom accent color for the app interface</string>
+    <string name="color_picker_title">Choose accent color</string>
+    <string name="color_picker_reset">Reset</string>
+    <string name="color_picker_apply">Apply</string>
+    <string name="color_picker_default">Default</string>
+    <string name="color_picker_invalid">Invalid color code</string>
+    <string name="color_picker_current">Current: %s</string>
+
+    <string name="download_album_art">Download cover art</string>
+    <string name="album_art_saved">Cover art saved to gallery</string>
+    <string name="album_art_save_error">Failed to save cover art</string>
 </resources>

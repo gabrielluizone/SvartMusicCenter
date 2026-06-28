@@ -37,3 +37,7 @@ mobile/google-services.json
 .playwright-mcp/
 promp.txt
 centering_check.png
+
+# Design/reference material, not part of the app build
+redesign/
+retromusic/

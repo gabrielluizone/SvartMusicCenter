@@ -1,11 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Watch screen face (always dark, like a real device) -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#232E33" />
+            <solid android:color="#16161A" />
+            <corners android:radius="40dp" />
         </shape>
     </item>
 
-    <item android:drawable="@drawable/four_way_cross_section" />
+    <!-- Subtle diagonal quadrant dividers -->
+    <item>
+        <vector
+            android:width="240dp"
+            android:height="240dp"
+            android:viewportWidth="354.33072"
+            android:viewportHeight="354.33072">
+            <path
+                android:fillColor="#00000000"
+                android:pathData="M0,354.3 L354.3,0"
+                android:strokeAlpha="0.10"
+                android:strokeColor="#FFFFFF"
+                android:strokeLineCap="round"
+                android:strokeWidth="2" />
+            <path
+                android:fillColor="#00000000"
+                android:pathData="M0,0 L354.3,354.3"
+                android:strokeAlpha="0.10"
+                android:strokeColor="#FFFFFF"
+                android:strokeLineCap="round"
+                android:strokeWidth="2" />
+        </vector>
+    </item>
 </layer-list>

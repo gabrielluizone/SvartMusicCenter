@@ -1,5 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Default screen margins, per the Android Design guidelines. -->
+    <!-- Lyra design system — paleta base (luz e sombra compartilhadas) -->
+    <color name="lyra_sage">#87A89F</color>
+    <color name="lyra_sage_dark">#6B9088</color>
+    <!-- Accent adaptável: mais suave no modo claro, sage no modo escuro (sobrescrito em values-night) -->
+    <color name="lyra_accent">#86a69d</color>
+    <color name="lyra_accent_highlight">#204A9488</color>
+
+    <!-- Modo claro -->
+    <color name="lyra_white">#FFFFFF</color>
+    <color name="lyra_mist">#F2F2F2</color>
+    <color name="lyra_stone">#E2E2E2</color>
+    <color name="lyra_pewter">#888888</color>
+    <color name="lyra_ink">#1A1A1A</color>
+
+    <!-- Modo escuro (OLED) -->
+    <color name="lyra_void">#0A0A0A</color>
+    <color name="lyra_shadow">#141414</color>
+    <color name="lyra_carbon">#1E1E1E</color>
+    <color name="lyra_ash">#606060</color>
+    <color name="lyra_snow">#F0F0F0</color>
+
+    <!-- Cores adaptáveis — sobrescritas em values-night -->
+    <color name="lyra_background">@color/lyra_white</color>
+    <color name="lyra_surface">@color/lyra_mist</color>
+    <color name="lyra_on_surface">@color/lyra_ink</color>
+    <color name="lyra_text_secondary">@color/lyra_pewter</color>
+    <color name="lyra_divider">@color/lyra_stone</color>
+    <color name="lyra_nav_inactive">@color/lyra_pewter</color>
+    <color name="lyra_pref_summary">#767676</color>
+
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
+    <color name="watch_background">#DEDEDE</color>
 </resources>

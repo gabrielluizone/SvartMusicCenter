@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/lyra_background"
+    android:orientation="vertical">
+
+    <!-- Fixed top section (doesn't scroll) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="12dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
+
+        <!-- Handle bar -->
+        <View
+            android:layout_width="36dp"
+            android:layout_height="4dp"
+            android:background="@color/lyra_divider"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Top row: thumbnail + song info + controls -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <!-- Album Art thumbnail -->
+            <ImageView
+                android:id="@+id/detail_album_art"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="14dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_music_note"
+                android:background="@drawable/mini_album_bg"
+                android:clipToOutline="true" />
+
+            <!-- Title + Artist -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/detail_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/lyra_on_surface"
+                    android:fontFamily="@font/google_sans"
+                    android:singleLine="true"
+                    android:ellipsize="marquee"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:scrollHorizontally="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:includeFontPadding="false"
+                    android:text="—" />
+
+                <TextView
+                    android:id="@+id/detail_artist"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="@color/lyra_text_secondary"
+                    android:fontFamily="@font/google_sans"
+                    android:singleLine="true"
+                    android:ellipsize="marquee"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:scrollHorizontally="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:includeFontPadding="false"
+                    android:layout_marginTop="1dp" />
+            </LinearLayout>
+
+            <!-- Prev button -->
+            <ImageButton
+                android:id="@+id/detail_prev"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_mini_prev"
+                android:background="?selectableItemBackgroundBorderless"
+                android:padding="8dp"
+                android:layout_marginStart="8dp"
+                android:tint="@color/lyra_on_surface" />
+
+            <!-- Play/Pause — no tint so icon is its natural color -->
+            <ImageButton
+                android:id="@+id/detail_play_pause"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@drawable/ic_nav_playing"
+                android:background="?selectableItemBackgroundBorderless"
+                android:padding="8dp" />
+
+            <!-- Next button -->
+            <ImageButton
+                android:id="@+id/detail_next"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_mini_next"
+                android:background="?selectableItemBackgroundBorderless"
+                android:padding="8dp"
+                android:tint="@color/lyra_on_surface" />
+        </LinearLayout>
+
+        <!-- SeekBar -->
+        <SeekBar
+            android:id="@+id/detail_seek_bar"
+            style="@style/Widget.AppCompat.SeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="1000"
+            android:progress="0"
+            android:progressTint="@color/lyra_accent"
+            android:thumbTint="@color/lyra_accent"
+            android:progressBackgroundTint="@color/lyra_divider" />
+
+        <!-- Time row -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:id="@+id/detail_time_elapsed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:textColor="@color/lyra_text_secondary"
+                android:text="0:00" />
+
+            <TextView
+                android:id="@+id/detail_time_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:textSize="11sp"
+                android:textColor="@color/lyra_text_secondary"
+                android:text="0:00" />
+        </RelativeLayout>
+
+        <!-- Divider before queue -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/lyra_divider" />
+
+        <!-- Queue header -->
+        <TextView
+            android:id="@+id/queue_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:textAllCaps="true"
+            android:letterSpacing="0.1"
+            android:textColor="@color/lyra_text_secondary"
+            android:fontFamily="@font/google_sans"
+            android:text="@string/queue_header"
+            android:paddingTop="10dp"
+            android:paddingBottom="4dp" />
+
+    </LinearLayout>
+
+    <!-- Scrollable queue list with fixed height -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:overScrollMode="ifContentScrolls"
+        android:fadingEdgeLength="12dp"
+        android:requiresFadingEdge="vertical">
+
+        <LinearLayout
+            android:id="@+id/detail_queue_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="16dp" />
+
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

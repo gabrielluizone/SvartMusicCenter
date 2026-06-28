@@ -3,73 +3,125 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
+        android:key="cat_appearance"
+        android:title="@string/category_appearance"
+        android:layout="@layout/pref_category_header">
+
+        <ListPreference
+            android:key="app_theme"
+            android:title="@string/setting_theme"
+            android:defaultValue="system"
+            android:entries="@array/theme_entries"
+            android:entryValues="@array/theme_entry_values"
+            android:summary="%s"
+            android:layout="@layout/pref_item" />
+
+        <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
+            android:key="dynamic_accent_color"
+            android:defaultValue="false"
+            android:title="@string/setting_dynamic_accent_color"
+            android:summary="@string/setting_dynamic_accent_color_description"
+            android:layout="@layout/pref_switch_item" />
+
+        <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
+            android:key="desaturated_color"
+            android:defaultValue="false"
+            android:title="@string/setting_desaturated_color"
+            android:summary="@string/setting_desaturated_color_description"
+            android:dependency="dynamic_accent_color"
+            android:layout="@layout/pref_switch_item" />
+
+        <Preference
+            android:key="custom_accent_color"
+            android:title="@string/setting_custom_accent_color"
+            android:summary="@string/setting_custom_accent_color_description"
+            android:layout="@layout/pref_item" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:key="cat_music_screen"
-        android:title="@string/category_music_screen">
+        android:title="@string/category_music_screen"
+        android:layout="@layout/pref_category_header">
 
         <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
             android:defaultValue="false"
             android:key="always_show_time"
             android:summaryOff="@string/setting_always_show_time_off_description"
             android:summaryOn="@string/setting_always_show_time_on_description"
-            android:title="@string/setting_always_show_time" />
+            android:title="@string/setting_always_show_time"
+            android:layout="@layout/pref_switch_item" />
 
         <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
             android:defaultValue="false"
             android:key="pause_on_swipe_exit"
             android:title="@string/setting_pause_on_swipe_exit"
-            android:summary="@string/setting_pause_on_swipe_exit_description" />
+            android:summary="@string/setting_pause_on_swipe_exit_description"
+            android:layout="@layout/pref_switch_item" />
 
         <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
             android:defaultValue="true"
             android:key="haptic_feedback"
             android:title="@string/setting_haptic_feedback"
-            android:summary="@string/setting_haptic_feedback_description" />
+            android:summary="@string/setting_haptic_feedback_description"
+            android:layout="@layout/pref_switch_item" />
 
         <com.matejdro.wearutils.preferences.compat.NumericEditTextPreference
             android:defaultValue="300"
             android:key="rotating_crown_off_period"
             android:title="@string/setting_rotating_crown_off_period"
-            android:summary="@string/setting_rotating_crown_off_period_description" />
+            android:summary="@string/setting_rotating_crown_off_period_description"
+            android:layout="@layout/pref_item" />
 
         <com.matejdro.wearutils.preferences.compat.NumericEditTextPreference
             android:defaultValue="100"
             android:key="rotating_crown_sensitivity"
             android:title="@string/setting_rotating_sensitivity"
-            android:summary="@string/setting_rotating_sensitivity_description" />
+            android:summary="@string/setting_rotating_sensitivity_description"
+            android:layout="@layout/pref_item" />
 
         <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
             android:defaultValue="false"
             android:key="disable_ambient_physical_double_click"
             android:title="@string/setting_disable_ambient_physical_double_click"
-            android:summary="@string/setting_disable_ambient_physical_double_click_description" />
+            android:summary="@string/setting_disable_ambient_physical_double_click_description"
+            android:layout="@layout/pref_switch_item" />
 
         <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
             android:defaultValue="false"
             android:key="swipe_up_for_queue"
             android:title="@string/setting_swipe_up_for_queue"
-            android:summary="@string/setting_swipe_up_for_queue_description" />
+            android:summary="@string/setting_swipe_up_for_queue_description"
+            android:layout="@layout/pref_switch_item" />
 
         <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
             android:defaultValue="true"
             android:key="dim_album_art"
             android:title="@string/setting_dim_album_art"
-            android:summary="@string/setting_dim_album_art_description" />
+            android:summary="@string/setting_dim_album_art_description"
+            android:layout="@layout/pref_switch_item" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
         android:key="cat_action_list"
-        android:title="@string/category_action_list">
+        android:title="@string/category_action_list"
+        android:layout="@layout/pref_category_header">
+
         <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
             android:defaultValue="false"
             android:key="always_select_center_action"
             android:title="@string/setting_always_select_center_action"
-            android:summary="@string/setting_always_select_center_action_description" />
+            android:summary="@string/setting_always_select_center_action_description"
+            android:layout="@layout/pref_switch_item" />
+
     </PreferenceCategory>
 
     <PreferenceCategory
         android:key="cat_automation"
-        android:title="@string/category_automation">
+        android:title="@string/category_automation"
+        android:layout="@layout/pref_category_header">
+
         <com.matejdro.wearutils.preferences.compat.AutoSummaryListPreference
             android:defaultValue="false"
             android:key="auto_start_mode"
@@ -77,47 +129,80 @@
             android:entries="@array/auto_start_modes_descriptions"
             android:title="@string/setting_auto_start"
             app:summary="%1$s"
-            app:defaultValue="OFF" />
+            app:defaultValue="OFF"
+            android:layout="@layout/pref_item" />
 
         <com.matejdro.wearmusiccenter.view.settings.MusicAppListPreference
             android:key="auto_start_apps_blacklist"
             android:title="@string/setting_auto_start_apps_blacklist"
-            android:summary="@string/setting_auto_start_apps_blacklist_description" />
+            android:summary="@string/setting_auto_start_apps_blacklist_description"
+            android:layout="@layout/pref_item" />
+
         <com.matejdro.wearutils.preferences.compat.NumericEditTextPreference
             android:defaultValue="0"
             android:key="close_timeout"
             android:title="@string/setting_close_timeout"
-            android:summary="@string/setting_close_timeout_description" />
+            android:summary="@string/setting_close_timeout_description"
+            android:layout="@layout/pref_item" />
+
     </PreferenceCategory>
 
     <PreferenceCategory
         android:key="cat_notifications"
-        android:title="@string/category_notifications">
+        android:title="@string/category_notifications"
+        android:layout="@layout/pref_category_header">
+
         <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
             android:defaultValue="false"
             android:key="enable_notification_popup"
             android:title="@string/setting_enable_notifications"
-            android:summary="@string/setting_enable_notifications_description" />
+            android:summary="@string/setting_enable_notifications_description"
+            android:layout="@layout/pref_switch_item" />
+
         <com.matejdro.wearutils.preferences.compat.NumericEditTextPreference
             android:defaultValue="10"
             android:key="notification_timeout"
             android:title="@string/setting_notification_timeout"
-            android:summary="@string/setting_notification_timeout_description" />
-    </PreferenceCategory>
+            android:summary="@string/setting_notification_timeout_description"
+            android:layout="@layout/pref_item" />
 
+    </PreferenceCategory>
 
     <PreferenceCategory
         android:key="cat_about"
-        android:title="@string/category_about">
+        android:title="@string/category_about"
+        android:layout="@layout/pref_category_header">
+
         <Preference
             android:key="version"
-            android:title="@string/installed_version" />
+            android:title="@string/installed_version"
+            android:layout="@layout/pref_item" />
+
         <Preference
             android:key="supportButton"
             android:summary="@string/get_support_description"
-            android:title="@string/get_support" />
+            android:title="@string/get_support"
+            android:layout="@layout/pref_item" />
+
         <Preference
             android:key="licenses"
-            android:title="@string/licenses" />
+            android:title="@string/licenses"
+            android:layout="@layout/pref_item" />
+
     </PreferenceCategory>
+
+    <!-- Visível apenas após 7 cliques na versão -->
+    <PreferenceCategory
+        android:key="cat_developer"
+        android:title="@string/category_developer"
+        android:visible="false"
+        android:layout="@layout/pref_category_header">
+
+        <Preference
+            android:key="dev_build_info"
+            android:title="@string/dev_build_info"
+            android:layout="@layout/pref_item" />
+
+    </PreferenceCategory>
+
 </PreferenceScreen>

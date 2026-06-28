@@ -30,6 +30,8 @@ All communication goes through the Google Play Services **Wearable Data Layer AP
 
 `WatchMusicService` is a foreground `LifecycleService` that stays alive while music is playing or the UI is open, keeping `PhoneConnection` active. It shuts down after an idle timeout when neither condition holds.
 
+`WatchMediaSession` (`watch/communication/WatchMediaSession.kt`) is a `MediaSessionCompat` proxy: it mirrors phone playback state (metadata, playback state, album art, volume) received from `PhoneConnection`, and forwards transport controls (play/pause toggle, skip, seek, volume) back to the phone over the Data Layer. It is owned and lifecycle-managed by `WatchMusicService`. This is the architectural keystone that enables Wear OS system media surfaces, Tiles, and Complications to see and control the phone's music.
+
 ### Watch input handling
 
 `MainActivity` handles three input categories:
@@ -69,3 +71,13 @@ Release signing config is pulled from an optional `keystore.properties` file at 
 - Kotlin (see `libs.toml` for the pinned version), Java/Kotlin target 21.
 - `compileSdk 36`, `minSdkVersion` 23 (mobile) / 25 (wear), `targetSdkVersion 30`.
 - Dependency versions are centralized in `libs.toml` (root) and `wearutils/libs.toml` (submodule), referenced via Gradle version catalogs (`libs`, `wearUtilsLibs`).
+
+## Package naming gotcha
+
+Despite living in `wear/`, the watch-side code is under the package `com.matejdro.wearmusiccenter.watch.*` (not `.wear.*`). All watch-side classes (`PhoneConnection`, `WatchMusicService`, `MainActivity`, etc.) are in subdirectories named `watch/communication/`, `watch/view/`, `watch/model/`, `watch/config/`, `watch/util/`.
+
+## Modernization roadmap
+
+`docs/wear-modernization-plan.md` contains the full phased modernization strategy: Foundation (targetSdk 30→34, deprecated API cleanup) → MediaSession mirror (watch-side `MediaSession` that forwards controls to the phone) → Tiles & Complications → in-UI navigation. Consult this doc before making architectural decisions in `wear/`.
+
+**Current state (branch `wear-phase-1-mediasession`):** `WatchMediaSession` is implemented and active. Jetpack Compose for Wear OS (`wear.compose.material3`) is enabled in `wear/build.gradle` and used for `QueueActivity`/`QueueScreen` (`watch/view/queue/`). New watch UI work should prefer Compose; the legacy View-based `MainActivity` and `ActionsMenuFragment` remain for existing screens.
