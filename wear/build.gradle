@@ -13,8 +13,8 @@ android {
         // 26 required by androidx.wear.tiles (Tiles need Wear OS 2.x+; API 25 / Wear 2.0 is extinct).
         minSdkVersion 26
         targetSdkVersion 34
-        versionCode 133
-        versionName "1.12"
+        versionCode 134
+        versionName "1.13"
     }
     buildTypes {
         release {
