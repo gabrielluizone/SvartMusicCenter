@@ -70,6 +70,7 @@ class MainActivity : WearCompanionPhoneActivity(),
     private var isSeeking = false
     // Holds the currently extracted dynamic accent color (null = use default lyra_accent)
     private var dynamicAccentColor: Int? = null
+    private var beatAnimator: android.animation.ValueAnimator? = null
 
     @Inject
     lateinit var fragmentInjector: DispatchingAndroidInjector<Fragment>
@@ -240,6 +241,8 @@ class MainActivity : WearCompanionPhoneActivity(),
     }
 
     override fun onDestroy() {
+        beatAnimator?.cancel()
+        beatAnimator = null
         miniPlayerController?.unregisterCallback(miniPlayerCallback)
         stopProgressUpdates()
         PreferenceManager.getDefaultSharedPreferences(this)
@@ -371,6 +374,7 @@ class MainActivity : WearCompanionPhoneActivity(),
         binding.miniPlayPause.imageTintList = csl
         binding.fabPlay.backgroundTintList = csl
         binding.fab.backgroundTintList = csl
+        binding.beatBar.setBackgroundColor(color)
         detailSeekBar?.progressTintList = csl
         detailSeekBar?.thumbTintList = csl
         detailPlayPause?.imageTintList = csl
@@ -438,12 +442,44 @@ class MainActivity : WearCompanionPhoneActivity(),
         )
         updatePlayFabVisibility(state)
 
+        if (playing) {
+            startBeatAnimation()
+        } else {
+            stopBeatAnimation()
+        }
+
         // Update dialog play/pause button if showing
         if (mediaDetailsDialog?.isShowing == true) {
             detailPlayPause?.setImageResource(
                 if (playing) R.drawable.ic_nav_stopped else R.drawable.ic_nav_playing
             )
         }
+    }
+
+    private fun startBeatAnimation() {
+        if (beatAnimator != null) return
+        
+        binding.beatBar.visibility = View.VISIBLE
+        binding.beatBar.pivotY = 0f // Pulse scale downwards from the top of the mini_player (floor)
+        
+        beatAnimator = android.animation.ValueAnimator.ofFloat(0.1f, 1.0f).apply {
+            duration = 600
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            repeatMode = android.animation.ValueAnimator.REVERSE
+            interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+            addUpdateListener { animator ->
+                val value = animator.animatedValue as Float
+                binding.beatBar.alpha = 0.2f + (value * 0.8f)
+                binding.beatBar.scaleY = 1.0f + (value * 2.5f) // Grow the thickness dynamically
+            }
+            start()
+        }
+    }
+
+    private fun stopBeatAnimation() {
+        beatAnimator?.cancel()
+        beatAnimator = null
+        binding.beatBar.visibility = View.GONE
     }
 
     private fun formatTime(ms: Long): String {

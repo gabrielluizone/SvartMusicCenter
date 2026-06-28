@@ -27,7 +27,8 @@
                 android:background="@color/lyra_background"
                 app:titleTextColor="@color/lyra_on_surface"
                 app:subtitleTextColor="@color/lyra_text_secondary"
-                app:titleTextAppearance="@style/LyraToolbarTitle" />
+                app:titleTextAppearance="@style/LyraToolbarTitle"
+                app:titleMargins="0dp" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -102,6 +103,14 @@
                 android:progressBackgroundTint="@color/lyra_divider"
                 android:thumb="@drawable/seekbar_thumb_small"
                 android:splitTrack="false" />
+
+            <!-- Pulsing audio beat bar at the bottom of the screen (on the floor) -->
+            <View
+                android:id="@+id/beat_bar"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:background="@color/lyra_accent"
+                android:alpha="0.0" />
 
             <!-- Content row -->
             <LinearLayout
