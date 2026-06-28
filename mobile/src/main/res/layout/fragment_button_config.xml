@@ -45,12 +45,12 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/on_screen_buttons_caption" />
 
-        <!-- Watch face: fixed-size dark preview, centered -->
+        <!-- Watch face: fixed-size dark preview, centered. Margem superior aumentada para mais teto -->
         <ImageView
             android:id="@+id/watch_display_background"
             android:layout_width="244dp"
             android:layout_height="244dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="40dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/on_screen_hint"
@@ -133,13 +133,13 @@
             tools:src="@drawable/action_skip_next"
             tools:tint="#FFFFFF" />
 
-        <!-- Divider -->
+        <!-- Divider. Margem superior aumentada para dar mais chão -->
         <View
             android:id="@+id/divider"
             android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_marginStart="20dp"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="56dp"
             android:layout_marginEnd="20dp"
             android:background="@color/lyra_divider"
             app:layout_constraintEnd_toEndOf="parent"
