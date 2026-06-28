@@ -18,10 +18,41 @@
     <string name="easter_egg_message">You found the Lyra constellation.\n\nLyra — the lyre of Orpheus,\ncast into the sky as a reminder\nthat music outlasts everything.\n\n♪ Built with care. ♪</string>
     <string name="easter_egg_ok">Close</string>
 
+    <string name="nav_tutorial">Guide</string>
     <string name="nav_playing">Playing</string>
     <string name="nav_stopped">Stopped</string>
     <string name="nav_actions">Actions</string>
     <string name="nav_settings">Settings</string>
+
+    <!-- Guide / tutorial tab -->
+    <string name="tutorial_header">How to use Lyra</string>
+    <string name="tutorial_intro">Lyra turns your watch into a remote for the music playing on your phone. Here\'s everything you can do from your wrist.</string>
+
+    <string name="tutorial_taps_title">Tap the screen zones</string>
+    <string name="tutorial_taps_desc">The watch screen is split into four zones — top, bottom, left and right. Tapping a zone runs the action you assigned to it. By default the left zone plays or pauses, the right skips to the next track, and the top and bottom change the volume.</string>
+
+    <string name="tutorial_gestures_title">Single, double &amp; long press</string>
+    <string name="tutorial_gestures_desc">Each zone holds three separate actions: one for a single tap, one for a double tap and one for a long press. For example, a single tap in the center can pause the music while a double tap opens the actions menu — you won\'t see this unless you set it up, so customize it to taste.</string>
+
+    <string name="tutorial_buttons_title">Physical buttons</string>
+    <string name="tutorial_buttons_desc">If your watch has side buttons, you can assign single, double and long-press actions to them too. They keep working even when the screen is off.</string>
+
+    <string name="tutorial_rotary_title">Rotating crown</string>
+    <string name="tutorial_rotary_desc">Turn the rotating crown or bezel to change the volume. Prefer to scrub through the song instead? Turn on “Seek with rotary crown” in Settings.</string>
+
+    <string name="tutorial_swipe_up_title">Swipe up</string>
+    <string name="tutorial_swipe_up_desc">Swipe up on the now-playing screen to open the actions menu. You can switch this to open the playback queue in Settings.</string>
+
+    <string name="tutorial_exit_title">Swipe to exit</string>
+    <string name="tutorial_exit_desc">Swipe from the left edge to leave the player. It can pause playback automatically when you exit — enable it in Settings.</string>
+
+    <string name="tutorial_tile_title">Quick-control Tile</string>
+    <string name="tutorial_tile_desc">Swipe the watch face sideways to the Lyra tile for instant play, pause and skip without opening the app.</string>
+
+    <string name="tutorial_system_title">System media controls</string>
+    <string name="tutorial_system_desc">The current track also shows up in your watch\'s own media controls and recent apps, so you can control playback from there as well.</string>
+
+    <string name="tutorial_tip">Tip: set up every gesture in the Playing, Stopped and Actions tabs.</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>

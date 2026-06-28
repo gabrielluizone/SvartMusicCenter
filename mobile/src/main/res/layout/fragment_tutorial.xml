@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="32dp">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="20dp"
+            android:fontFamily="@font/google_sans"
+            android:text="@string/tutorial_header"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginEnd="20dp"
+            android:fontFamily="@font/google_sans"
+            android:lineSpacingMultiplier="1.15"
+            android:text="@string/tutorial_intro"
+            android:textColor="@color/lyra_pref_summary"
+            android:textSize="14sp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="20dp"
+            android:background="@color/lyra_divider" />
+
+        <!-- Tap zones -->
+        <include
+            layout="@layout/item_tutorial_card"
+            android:id="@+id/card_taps" />
+
+        <!-- Single/double/long press -->
+        <include
+            layout="@layout/item_tutorial_card"
+            android:id="@+id/card_gestures" />
+
+        <!-- Physical buttons -->
+        <include
+            layout="@layout/item_tutorial_card"
+            android:id="@+id/card_buttons" />
+
+        <!-- Rotary -->
+        <include
+            layout="@layout/item_tutorial_card"
+            android:id="@+id/card_rotary" />
+
+        <!-- Swipe up -->
+        <include
+            layout="@layout/item_tutorial_card"
+            android:id="@+id/card_swipe_up" />
+
+        <!-- Swipe to exit -->
+        <include
+            layout="@layout/item_tutorial_card"
+            android:id="@+id/card_exit" />
+
+        <!-- Tile -->
+        <include
+            layout="@layout/item_tutorial_card"
+            android:id="@+id/card_tile" />
+
+        <!-- System media controls -->
+        <include
+            layout="@layout/item_tutorial_card"
+            android:id="@+id/card_system" />
+
+        <!-- Footer tip -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="20dp"
+            android:background="@drawable/dialog_bg_lyra"
+            android:fontFamily="@font/google_sans"
+            android:lineSpacingMultiplier="1.15"
+            android:padding="16dp"
+            android:text="@string/tutorial_tip"
+            android:textColor="@color/lyra_accent"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+
+</ScrollView>

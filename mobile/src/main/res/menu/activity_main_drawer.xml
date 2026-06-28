@@ -2,6 +2,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
+        android:id="@+id/tutorial"
+        android:icon="@drawable/ic_nav_tutorial"
+        android:title="@string/nav_tutorial" />
+    <item
         android:id="@+id/playing_controls"
         android:icon="@drawable/ic_nav_playing"
         android:title="@string/nav_playing" />

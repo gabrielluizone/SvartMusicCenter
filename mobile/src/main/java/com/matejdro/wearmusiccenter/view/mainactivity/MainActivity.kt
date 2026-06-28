@@ -140,6 +140,7 @@ class MainActivity : WearCompanionPhoneActivity(),
 
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
+                R.id.tutorial -> swapFragment(TutorialFragment())
                 R.id.playing_controls -> swapFragment(ButtonConfigFragment.newInstance(true))
                 R.id.stopped_controls -> swapFragment(ButtonConfigFragment.newInstance(false))
                 R.id.actions_menu -> swapFragment(ActionListFragment())
