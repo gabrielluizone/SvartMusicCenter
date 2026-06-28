@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <!-- Dark tile face -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M0,0h200v200h-200z" />
+    <!-- Accent play button -->
+    <path
+        android:fillColor="#87A89F"
+        android:pathData="M100,108m-34,0a34,34 0,1 1,68 0a34,34 0,1 1,-68 0" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M90,92l24,16l-24,16z" />
+    <!-- Title / artist placeholder bars -->
+    <path
+        android:fillColor="#F0F0F0"
+        android:pathData="M60,46h80v8h-80z" />
+    <path
+        android:fillColor="#808080"
+        android:pathData="M76,62h48v6h-48z" />
+</vector>

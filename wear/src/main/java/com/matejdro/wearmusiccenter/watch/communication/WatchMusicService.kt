@@ -16,7 +16,9 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.ongoing.OngoingActivity
+import androidx.wear.tiles.TileService
 import com.matejdro.wearmusiccenter.R
+import com.matejdro.wearmusiccenter.watch.tile.MediaTileService
 import com.matejdro.wearmusiccenter.watch.view.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
@@ -52,6 +54,8 @@ class WatchMusicService : LifecycleService() {
         mediaSession = WatchMediaSession(this, phoneConnection, lifecycleScope)
         phoneConnection.musicState.observe(this) { resource ->
             mediaSession.update(resource?.data, phoneConnection.albumArt.value)
+            // Keep the glanceable quick-control Tile in sync with the latest playback state.
+            TileService.getUpdater(this).requestUpdate(MediaTileService::class.java)
         }
         phoneConnection.albumArt.observe(this) { albumArt ->
             mediaSession.update(phoneConnection.musicState.value?.data, albumArt)

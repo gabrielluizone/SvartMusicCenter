@@ -103,6 +103,22 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- Glanceable quick-control Tile -->
+        <service
+            android:name=".watch.tile.MediaTileService"
+            android:exported="true"
+            android:label="@string/tile_label"
+            android:icon="@drawable/ic_queue_music"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@drawable/tile_preview" />
+        </service>
+
         <activity
             android:name="androidx.wear.activity.ConfirmationActivity"
             android:exported="false" />
