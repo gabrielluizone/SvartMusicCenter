@@ -1,14 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/nav_header_height"
-    android:background="@drawable/nav_header_background"
-    android:gravity="bottom"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:theme="@style/ThemeOverlay.AppCompat.Dark">
+    android:padding="24dp"
+    android:background="@color/lyra_background">
 
-</FrameLayout>
+    <!-- App Logo / Icon -->
+    <ImageView
+        android:id="@+id/drawer_app_logo"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_marginTop="32dp"
+        android:src="@mipmap/ic_launcher"
+        android:background="@drawable/mini_album_bg"
+        android:padding="12dp"
+        android:clipToOutline="true"
+        android:layout_gravity="center_horizontal" />
+
+    <!-- App Name -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/app_name"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/lyra_on_surface"
+        android:fontFamily="@font/google_sans"
+        android:gravity="center_horizontal" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Companion App"
+        android:textSize="12sp"
+        android:textColor="@color/lyra_text_secondary"
+        android:fontFamily="@font/google_sans"
+        android:gravity="center_horizontal" />
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="24dp"
+        android:background="@color/lyra_divider" />
+
+    <!-- Author Section Info -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="AUTOR"
+        android:textSize="11sp"
+        android:letterSpacing="0.08"
+        android:textAllCaps="true"
+        android:textColor="@color/lyra_accent"
+        android:fontFamily="@font/google_sans"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Gabriel Luiz"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/lyra_on_surface"
+        android:fontFamily="@font/google_sans" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="github.com/gabrielluizone"
+        android:textSize="13sp"
+        android:textColor="@color/lyra_text_secondary"
+        android:fontFamily="@font/google_sans" />
+
+    <!-- App Info Section -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="SOBRE"
+        android:textSize="11sp"
+        android:letterSpacing="0.08"
+        android:textAllCaps="true"
+        android:textColor="@color/lyra_accent"
+        android:fontFamily="@font/google_sans"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Controle e sincronização de músicas entre seu smartphone Android e o relógio inteligente Wear OS."
+        android:textSize="13sp"
+        android:textColor="@color/lyra_on_surface"
+        android:lineSpacingMultiplier="1.2"
+        android:fontFamily="@font/google_sans" />
+
+    <!-- Spacer to push version info to the bottom -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Version Info -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Versão 1.0.0"
+        android:textSize="11sp"
+        android:textColor="@color/lyra_text_secondary"
+        android:fontFamily="@font/google_sans"
+        android:gravity="center_horizontal" />
+
+</LinearLayout>

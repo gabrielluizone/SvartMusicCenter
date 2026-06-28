@@ -12,6 +12,7 @@ import android.os.SystemClock
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import com.matejdro.wearmusiccenter.NotificationService
@@ -137,6 +138,13 @@ class MainActivity : WearCompanionPhoneActivity(),
 
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(true)
+
+        val toggle = ActionBarDrawerToggle(
+            this, binding.drawerLayout, binding.toolbar,
+            R.string.navigation_drawer_open, R.string.navigation_drawer_close
+        )
+        binding.drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
 
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
