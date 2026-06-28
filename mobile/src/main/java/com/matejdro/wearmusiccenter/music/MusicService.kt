@@ -278,6 +278,23 @@ class MusicService : LifecycleService(), MessageClient.OnMessageReceivedListener
         currentMediaController?.transportControls?.seekTo(positionMs)
     }
 
+    private var preMuteVolume = 0
+
+    /** Toggles mute on the active media session, restoring the previous level when unmuting. */
+    fun toggleMute() {
+        val mediaController = currentMediaController ?: return
+        val playbackInfo = mediaController.playbackInfo ?: return
+        val maxVolume = playbackInfo.maxVolume
+
+        if (playbackInfo.currentVolume > 0) {
+            preMuteVolume = playbackInfo.currentVolume
+            mediaController.setVolumeTo(0, 0)
+        } else {
+            val restored = if (preMuteVolume > 0) preMuteVolume else maxVolume / 2
+            mediaController.setVolumeTo(restored, 0)
+        }
+    }
+
     private fun togglePlayPause() {
         currentMediaController?.let {
             it.dispatchMediaButtonEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))

@@ -7,13 +7,17 @@ import com.matejdro.wearmusiccenter.actions.appplay.AppPlayAction
 import com.matejdro.wearmusiccenter.actions.playback.LikeAction
 import com.matejdro.wearmusiccenter.actions.playback.PauseAction
 import com.matejdro.wearmusiccenter.actions.playback.PlayAction
+import com.matejdro.wearmusiccenter.actions.playback.PlayPauseToggleAction
 import com.matejdro.wearmusiccenter.actions.playback.RepeatAction
+import com.matejdro.wearmusiccenter.actions.playback.RestartTrackAction
 import com.matejdro.wearmusiccenter.actions.playback.ReverseThirtySecondsAction
 import com.matejdro.wearmusiccenter.actions.playback.ShuffleAction
 import com.matejdro.wearmusiccenter.actions.playback.SkipThirtySecondsAction
 import com.matejdro.wearmusiccenter.actions.playback.SkipToNextAction
 import com.matejdro.wearmusiccenter.actions.playback.SkipToPrevAction
+import com.matejdro.wearmusiccenter.actions.playback.StopAction
 import com.matejdro.wearmusiccenter.actions.tasker.TaskerTaskAction
+import com.matejdro.wearmusiccenter.actions.volume.MuteToggleAction
 import dagger.Binds
 import dagger.Module
 import dagger.multibindings.ClassKey
@@ -35,6 +39,26 @@ abstract class ActionHandlersModule {
     @IntoMap
     @ClassKey(PlayAction::class)
     abstract fun bindPlayActionsHandler(handler: PlayAction.Handler): ActionHandler<*>
+
+    @Binds
+    @IntoMap
+    @ClassKey(PlayPauseToggleAction::class)
+    abstract fun bindPlayPauseToggleActionsHandler(handler: PlayPauseToggleAction.Handler): ActionHandler<*>
+
+    @Binds
+    @IntoMap
+    @ClassKey(StopAction::class)
+    abstract fun bindStopActionsHandler(handler: StopAction.Handler): ActionHandler<*>
+
+    @Binds
+    @IntoMap
+    @ClassKey(RestartTrackAction::class)
+    abstract fun bindRestartTrackActionsHandler(handler: RestartTrackAction.Handler): ActionHandler<*>
+
+    @Binds
+    @IntoMap
+    @ClassKey(MuteToggleAction::class)
+    abstract fun bindMuteToggleActionsHandler(handler: MuteToggleAction.Handler): ActionHandler<*>
 
     @Binds
     @IntoMap

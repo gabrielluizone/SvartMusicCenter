@@ -15,6 +15,10 @@ object StandardIcons {
             StandardActions.ACTION_OPEN_MENU to com.matejdro.common.R.drawable.action_open_menu,
             StandardActions.ACTION_SKIP_30_SECONDS to com.matejdro.common.R.drawable.action_skip_30_seconds,
             StandardActions.ACTION_REVERSE_30_SECONDS to com.matejdro.common.R.drawable.action_reverse_30_seconds,
+            StandardActions.ACTION_PLAY_PAUSE to com.matejdro.common.R.drawable.action_play_pause,
+            StandardActions.ACTION_STOP to com.matejdro.common.R.drawable.action_stop,
+            StandardActions.ACTION_RESTART to com.matejdro.common.R.drawable.action_restart,
+            StandardActions.ACTION_MUTE to com.matejdro.common.R.drawable.action_volume_off,
 
             getButtonKey(KeyEvent.KEYCODE_BACK) to R.drawable.button_back,
             getButtonKey(SpecialButtonCodes.TURN_ROTARY_CW) to R.drawable.button_turn_cw,

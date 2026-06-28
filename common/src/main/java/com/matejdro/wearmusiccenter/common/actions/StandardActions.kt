@@ -10,4 +10,8 @@ object StandardActions {
     const val ACTION_OPEN_MENU = "com.matejdro.wearmusiccenter.actions.OpenMenuAction"
     const val ACTION_SKIP_30_SECONDS = "com.matejdro.wearmusiccenter.actions.playback.SkipThirtySecondsAction"
     const val ACTION_REVERSE_30_SECONDS = "com.matejdro.wearmusiccenter.actions.playback.ReverseThirtySecondsAction"
+    const val ACTION_PLAY_PAUSE = "com.matejdro.wearmusiccenter.actions.playback.PlayPauseToggleAction"
+    const val ACTION_STOP = "com.matejdro.wearmusiccenter.actions.playback.StopAction"
+    const val ACTION_RESTART = "com.matejdro.wearmusiccenter.actions.playback.RestartTrackAction"
+    const val ACTION_MUTE = "com.matejdro.wearmusiccenter.actions.volume.MuteToggleAction"
 }

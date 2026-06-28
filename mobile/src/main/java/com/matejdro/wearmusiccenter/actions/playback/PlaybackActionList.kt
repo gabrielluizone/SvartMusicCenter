@@ -16,8 +16,11 @@ class PlaybackActionList : PhoneAction {
         actionPicker.updateDisplayedActionsWithBackStack(listOf(
                 PlayAction(context),
                 PauseAction(context),
+                PlayPauseToggleAction(context),
+                StopAction(context),
                 SkipToPrevAction(context),
                 SkipToNextAction(context),
+                RestartTrackAction(context),
                 SkipThirtySecondsAction(context),
                 ReverseThirtySecondsAction(context),
                 LikeAction(context),

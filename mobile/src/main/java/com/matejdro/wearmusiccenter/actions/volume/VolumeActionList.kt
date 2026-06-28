@@ -15,7 +15,8 @@ class VolumeActionList : PhoneAction {
     override fun onActionPicked(actionPicker: ActionPickerViewModel) {
         actionPicker.updateDisplayedActionsWithBackStack(listOf(
                 IncreaseVolumeAction(context),
-                DecreaseVolumeAction(context)
+                DecreaseVolumeAction(context),
+                MuteToggleAction(context)
         ))
     }
 
