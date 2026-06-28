@@ -82,6 +82,13 @@
 
         <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
             android:defaultValue="false"
+            android:key="rotary_seek"
+            android:title="@string/setting_rotary_seek"
+            android:summary="@string/setting_rotary_seek_description"
+            android:layout="@layout/pref_switch_item" />
+
+        <com.matejdro.wearutils.preferences.compat.SwitchPreferenceEx
+            android:defaultValue="false"
             android:key="disable_ambient_physical_double_click"
             android:title="@string/setting_disable_ambient_physical_double_click"
             android:summary="@string/setting_disable_ambient_physical_double_click_description"

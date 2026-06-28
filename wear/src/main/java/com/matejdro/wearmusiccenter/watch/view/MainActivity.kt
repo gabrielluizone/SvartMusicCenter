@@ -87,6 +87,7 @@ class MainActivity : WearCompanionWatchActivity(),
         private const val REQUEST_CODE_POST_NOTIFICATIONS = 1001
 
         private const val VOLUME_BAR_TIMEOUT = 1000L
+        private const val ROTARY_SEEK_COMMIT_DELAY_MS = 400L
         private const val ROTARY_DEADZONE = 6f
         private const val OVERLAY_FADE_OUT_MS = 150L
         private const val OVERLAY_FADE_IN_MS = 80L
@@ -109,6 +110,7 @@ class MainActivity : WearCompanionWatchActivity(),
     private var notificationDismissDeadline: Long = Long.MAX_VALUE
     private var dimAlbumArt: Boolean = false
     private var lastKnownDurationMs: Long = 0L
+    private var pendingRotarySeekFraction: Float? = null
     private var latestAlbumArt: Bitmap? = null
     // Read by ActionsMenuFragment to highlight the currently-playing queue row in the same color.
     var currentAccentColor: Int = 0
@@ -935,6 +937,17 @@ class MainActivity : WearCompanionWatchActivity(),
             val multipler =
                     Preferences.getInt(preferences, MiscPreferences.ROTATING_CROWN_SENSITIVITY) / 100f
 
+            // Optional: scrub the playback timeline with the crown instead of changing volume.
+            if (Preferences.getBoolean(preferences, MiscPreferences.ROTARY_SEEK) &&
+                    binding.seekBar.seekable) {
+                val newFraction =
+                        (binding.seekBar.progress + delta * 0.0011f * multipler).coerceIn(0f, 1f)
+                binding.seekBar.progress = newFraction
+                showSeekOverlay(newFraction)
+                scheduleRotarySeekCommit(newFraction)
+                return true
+            }
+
             binding.volumeBar.incrementVolume(delta * 0.0011f * multipler)
             viewModel.updateVolume(binding.volumeBar.volume)
             showVolumeBar()
@@ -1203,6 +1216,25 @@ class MainActivity : WearCompanionWatchActivity(),
         binding.textVolumePercent.visibility = View.GONE
         binding.textSeekTime.visibility = View.VISIBLE
         binding.textSeekTime.text = formatPlaybackTime((fraction * lastKnownDurationMs).toLong())
+
+        // Auto-hide the seek overlay just like the volume overlay does.
+        handler.removeMessages(MESSAGE_HIDE_VOLUME)
+        handler.sendEmptyMessageDelayed(MESSAGE_HIDE_VOLUME, VOLUME_BAR_TIMEOUT)
+    }
+
+    private val rotarySeekCommitRunnable = Runnable {
+        pendingRotarySeekFraction?.let { viewModel.seekTo(it) }
+        pendingRotarySeekFraction = null
+    }
+
+    /**
+     * Rotary seeking fires many events per turn; update the ring instantly but only send the
+     * actual seek to the phone once the crown settles, to avoid flooding the Data Layer.
+     */
+    private fun scheduleRotarySeekCommit(fraction: Float) {
+        pendingRotarySeekFraction = fraction
+        handler.removeCallbacks(rotarySeekCommitRunnable)
+        handler.postDelayed(rotarySeekCommitRunnable, ROTARY_SEEK_COMMIT_DELAY_MS)
     }
 
     fun buzz() {

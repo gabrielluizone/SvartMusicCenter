@@ -100,6 +100,8 @@
     <string name="setting_pause_on_swipe_exit_description">Automatically pause any playback when exiting Lyra Player on the watch via swipe-left gesture.\n\nExiting via power button is not affected and it will never auto-pause.</string>
     <string name="setting_rotating_crown_off_period">Rotary input screen on delay</string>
     <string name="setting_rotating_crown_off_period_description">Rotating inputs (for example rotating crowns) can be oversensitive on some devices. To prevent accidental volume changes, rotary input will be disabled for <![CDATA[<b>%1$s milliseconds</b>]]> after you turn the screen on.</string>
+    <string name="setting_rotary_seek">Seek with rotary crown</string>
+    <string name="setting_rotary_seek_description">When enabled, rotating the crown scrubs through the current track instead of changing volume. Volume can still be changed with on-screen or physical buttons.</string>
     <string name="setting_rotating_sensitivity">Rotary input sensitivity</string>
     <string name="setting_rotating_sensitivity_description">Sensitivity for rotary input. Higher number means moving the rotary crown the same way will increase volume for more. Currently set to <![CDATA[<b>%1$s%%</b>]]>.</string>
     <string name="setting_disable_ambient_physical_double_click">Disable physical button double click in ambient</string>
